@@ -132,7 +132,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               <span>New Objective</span>
             </button>
             <div className="flex items-center gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-80">
+              <div className="relative w-full">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   <Search className="w-5 h-5" />
                 </span>
@@ -145,16 +145,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
                   style={{ minWidth: 320 }}
                 />
               </div>
-              <select
-                value={filterLevel}
-                onChange={(e) => setFilterLevel(e.target.value as OKRLevel | 'all')}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              >
-                <option value="all">All Levels</option>
-                <option value="company">Company</option>
-                <option value="team">Team</option>
-                <option value="individual">Individual</option>
-              </select>
+              {/* Removed filterLevel dropdown */}
             </div>
           </div>
         </div>
@@ -366,132 +357,4 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
                 .map(obj => (
                   <button
                     key={obj.id}
-                    className={`flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors cursor-pointer 
-                      ${obj.level === 'company' ? 'bg-blue-50 hover:bg-blue-100' : ''}
-                      ${obj.level === 'team' ? 'bg-green-50 hover:bg-green-100' : ''}
-                      ${obj.level === 'individual' ? 'bg-purple-50 hover:bg-purple-100' : ''}
-                      ${obj.level !== 'company' && obj.level !== 'team' && obj.level !== 'individual' ? 'bg-gray-50 hover:bg-blue-50' : ''}`}
-                    onClick={() => setDetailObjective(obj)}
-                    aria-label={`View details for ${obj.title}`}
-                  >
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900 truncate">{obj.title}</h4>
-                      <p className="text-xs text-gray-600">
-                        Updated {new Date(obj.updatedAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-gray-900">{obj.progress}%</div>
-                      <div className="w-12 bg-gray-200 rounded-full h-1 mt-1">
-                        <div 
-                          className={`h-1 rounded-full ${
-                            obj.progress === 0 ? 'bg-gray-400' :
-                            obj.progress < 40 ? 'bg-red-500' :
-                            obj.progress < 70 ? 'bg-amber-500' :
-                            obj.progress < 100 ? 'bg-blue-500' :
-                            'bg-green-500'
-                          }`}
-                          style={{ width: `${obj.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {showCreateModal && (
-        <CreateObjectiveModal onClose={() => { setShowCreateModal(false); setCreateLevel(null); }} />
-      )}
-      {createLevel && (
-        <CreateObjectiveModal
-          onClose={() => setCreateLevel(null)}
-          initialLevel={createLevel}
-        />
-      )}
-      {/* Filtered Objectives Modal */}
-      {filteredModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="filtered-objectives-modal-title"
-          tabIndex={-1}
-          onClick={() => {
-            if (window.isEditing) {
-              if (!window.confirm('You have unsaved changes. Closing will discard them. Continue?')) {
-                return;
-              }
-            }
-            setFilteredModal(null);
-          }}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative transform transition-all duration-300 scale-100 opacity-100 animate-fade-in"
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-              onClick={() => {
-                if (window.isEditing) {
-                  if (!window.confirm('You have unsaved changes. Closing will discard them. Continue?')) {
-                    return;
-                  }
-                }
-                setFilteredModal(null);
-              }}
-              aria-label="Close"
-            >
-              <X className="w-6 h-6" aria-hidden="true" />
-            </button>
-            <h3 id="filtered-objectives-modal-title" className="text-lg font-semibold mb-4">{filteredModal.title}</h3>
-            {filteredModal.objectives.length === 0 ? (
-              <p className="text-gray-500">No objectives found.</p>
-            ) : (
-              <ul className="divide-y divide-gray-100">
-                {['company', 'team', 'individual'].map(level => (
-                  filteredModal.objectives
-                    .filter(obj => obj.level === level)
-                    .map(obj => {
-                      let bg = '';
-                      if (obj.level === 'company') bg = 'bg-blue-50';
-                      else if (obj.level === 'team') bg = 'bg-green-50';
-                      else if (obj.level === 'individual') bg = 'bg-purple-50';
-                      // Progress color coding
-                      let progressColor = 'text-gray-400';
-                      if (obj.progress >= 70) progressColor = 'text-green-600';
-                      else if (obj.progress >= 40) progressColor = 'text-amber-600';
-                      else if (obj.progress > 0) progressColor = 'text-red-600';
-                      return (
-                        <li key={obj.id} className="border border-gray-200 rounded mb-2">
-                          <button
-                            className={`w-full text-left py-2 px-1 rounded flex flex-col ${bg} hover:bg-opacity-80`}
-                            onClick={() => { setDetailObjective(obj); setFilteredModal(null); }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center justify-center ${levelIcons[obj.level]?.color || ''}`} title={obj.level.charAt(0).toUpperCase() + obj.level.slice(1)}>
-                                {levelIcons[obj.level]?.icon}
-                              </span>
-                              <span className="font-medium text-gray-900">{obj.title}</span>
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {obj.owner} &middot; <span className={progressColor}>{obj.progress}%</span>
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-      {detailObjective && (
-        <ObjectiveDetail objective={detailObjective} onClose={() => setDetailObjective(null)} />
-      )}
-    </div>
-  );
-}
+                    className={`
