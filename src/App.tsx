@@ -6,6 +6,7 @@ import Archive from './components/Archive';
 import Settings from './components/Settings';
 import Hierarchy from './components/Hierarchy';
 import GanttChart from './components/GanttChart';
+import OkrList from './components/OkrList';
 import { useOKRData } from './hooks/useOKRData';
 import type { OKRSettings } from './types';
 import { Toaster } from 'react-hot-toast';
@@ -46,6 +47,8 @@ function App() {
         return <Hierarchy />;
       case 'gantt':
         return <GanttChart />;
+      case 'okr-list':
+        return <OkrList />;
       default:
         return <Dashboard searchTerm={searchTerm} onSearch={setSearchTerm} />;
     }
