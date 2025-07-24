@@ -23,10 +23,9 @@ declare global {
 export default function Header({ currentView, onViewChange, currentQuarter, currentYear, onQuarterYearChange, darkMode, setDarkMode }: HeaderProps) {
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Target },
-    { id: 'okr-list', label: 'OKR List', icon: BarChart3 }, // Use BarChart3 or replace with List/Table icon
     { id: 'gantt', label: 'Timeline', icon: CalendarRange },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'hierarchy', label: 'Hierarchy', icon: TreePine },
+    { id: 'okr-list', label: 'OKR List', icon: BarChart3 }, // Move this to the end, remove Hierarchy
   ];
 
   const [showSettingsMenu, setShowSettingsMenu] = React.useState(false);

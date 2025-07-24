@@ -9,16 +9,6 @@ const levelIcons: Record<string, React.ReactNode> = {
   individual: <User className="w-4 h-4 text-purple-600" />,
 };
 
-const columns = [
-  { key: 'title', label: 'Objective' },
-  { key: 'owner', label: 'Owner' },
-  { key: 'tags', label: 'Initiative' },
-  { key: 'progress', label: 'Progress' },
-  { key: 'level', label: 'Team' },
-  { key: 'timeline', label: 'Timeline' },
-  { key: 'due', label: 'Due Date' },
-];
-
 function ProgressBar({ value }: { value: number }) {
   return (
     <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -40,6 +30,41 @@ function getSortValue(obj: Objective, key: string) {
   }
 }
 
+// Helper: recursively check if an objective or any of its descendants match the search
+function matchesSearchOrDescendant(obj: Objective, objectives: Objective[], search: string): boolean {
+  if (
+    obj.title.toLowerCase().includes(search) ||
+    obj.owner.toLowerCase().includes(search) ||
+    (obj.tags && obj.tags.join(',').toLowerCase().includes(search)) ||
+    (obj.keyResults && obj.keyResults.some(kr =>
+      kr.title.toLowerCase().includes(search) ||
+      kr.owner.toLowerCase().includes(search)
+    ))
+  ) return true;
+  const children = objectives.filter(child => child.parentId === obj.id);
+  return children.some(child => matchesSearchOrDescendant(child, objectives, search));
+}
+
+// Helper: for a search, return all matching objectives and their parents
+function getHierarchyFilteredObjectives(objs: Objective[], search: string): Objective[] {
+  if (!search) return objs;
+  // Find all matching objectives (by title, owner, tags)
+  const matches = new Set<string>();
+  objs.forEach(obj => {
+    if (matchesSearchOrDescendant(obj, objs, search)) matches.add(obj.id);
+  });
+  // For each match, add all its parents
+  const result = new Set<string>();
+  function addWithParents(id: string) {
+    if (result.has(id)) return;
+    result.add(id);
+    const obj = objs.find(o => o.id === id);
+    if (obj && obj.parentId) addWithParents(obj.parentId);
+  }
+  matches.forEach(addWithParents);
+  return objs.filter(obj => result.has(obj.id));
+}
+
 export default function OkrList() {
   const { getCurrentObjectives } = useOKRData();
   const objectives = getCurrentObjectives();
@@ -48,14 +73,8 @@ export default function OkrList() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [search, setSearch] = useState('');
 
-  const filtered = objectives.filter(obj => {
-    const q = search.toLowerCase();
-    return (
-      obj.title.toLowerCase().includes(q) ||
-      obj.owner.toLowerCase().includes(q) ||
-      (obj.tags && obj.tags.join(',').toLowerCase().includes(q))
-    );
-  });
+  const searchLower = search.toLowerCase();
+  const filtered = getHierarchyFilteredObjectives(objectives, searchLower);
 
   const sorted = [...filtered].sort((a, b) => {
     const va = getSortValue(a, sortKey);
@@ -93,20 +112,117 @@ export default function OkrList() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-gray-50">
-              {columns.map(col => (
-                <th
-                  key={col.key}
-                  className="p-3 text-left font-semibold cursor-pointer select-none"
-                  onClick={() => handleSort(col.key)}
-                >
-                  <span className="inline-flex items-center">
-                    {col.label}
-                    {sortKey === col.key && (
-                      sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              <th
+                key="title"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('title')}
+              >
+                <span className="inline-flex items-center">
+                  Objective
+                  <button
+                    className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
+                    aria-label={
+                      Object.values(expanded).some(v => v === false)
+                        ? 'Expand all objectives'
+                        : 'Collapse all objectives'
+                    }
+                    tabIndex={0}
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      const anyCollapsed = sorted.some(obj => obj.keyResults.length > 0 && !expanded[obj.id]);
+                      setExpanded(prev => {
+                        const next = { ...prev };
+                        sorted.forEach(obj => {
+                          if (obj.keyResults.length > 0) next[obj.id] = anyCollapsed;
+                        });
+                        return next;
+                      });
+                    }}
+                  >
+                    {sorted.some(obj => obj.keyResults.length > 0 && !expanded[obj.id]) ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
                     )}
-                  </span>
-                </th>
-              ))}
+                  </button>
+                  {sortKey === 'title' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="owner"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('owner')}
+              >
+                <span className="inline-flex items-center">
+                  Owner
+                  {sortKey === 'owner' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="tags"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('tags')}
+              >
+                <span className="inline-flex items-center">
+                  Initiative
+                  {sortKey === 'tags' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="progress"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('progress')}
+              >
+                <span className="inline-flex items-center">
+                  Progress
+                  {sortKey === 'progress' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="level"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('level')}
+              >
+                <span className="inline-flex items-center">
+                  Team
+                  {sortKey === 'level' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="timeline"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('timeline')}
+              >
+                <span className="inline-flex items-center">
+                  Timeline
+                  {sortKey === 'timeline' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="due"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('due')}
+              >
+                <span className="inline-flex items-center">
+                  Due Date
+                  {sortKey === 'due' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
