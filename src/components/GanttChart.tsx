@@ -87,6 +87,7 @@ export default function GanttChart() {
   const [grouping, setGrouping] = useState<GroupingMode>('hierarchy');
   const [expandedObjectives, setExpandedObjectives] = useState<{ [id: string]: boolean }>({});
   const [search, setSearch] = useState('');
+  const [expandedLevels, setExpandedLevels] = useState<{ [level in OKRLevel]?: boolean }>({ company: true, team: true, individual: true });
 
   // Collapsible panels state, persisted per workspace and period
   const collapseKey = `okr-gantt-collapse-${currentWorkspace}-${startYear}-${startQuarter}-${endYear}-${endQuarter}`;
@@ -348,7 +349,70 @@ export default function GanttChart() {
         <table className="min-w-full border-collapse">
           <thead>
             <tr>
-              <th className="text-left p-2 border-b w-32">Level</th>
+              <th className="text-left p-2 border-b w-32">
+                <div className="flex items-center justify-between">
+                  <span>Level</span>
+                  {grouping === 'level' && (
+                    <button
+                      className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
+                      aria-label={
+                        levels.every(level => expandedLevels[level] !== false)
+                          ? 'Collapse all levels'
+                          : 'Expand all levels'
+                      }
+                      onClick={() => {
+                        const allExpanded = levels.every(level => expandedLevels[level] !== false);
+                        setExpandedLevels(prev => {
+                          const next = { ...prev };
+                          levels.forEach(level => {
+                            next[level] = !allExpanded; // collapse all if all expanded, else expand all
+                          });
+                          return next;
+                        });
+                      }}
+                    >
+                      {levels.every(level => expandedLevels[level] !== false) ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                  {grouping === 'hierarchy' && (
+                    <button
+                      className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
+                      aria-label={
+                        Object.values(expandedObjectives).some(v => v === false)
+                          ? 'Expand all'
+                          : 'Collapse all'
+                      }
+                      onClick={() => {
+                        // Get all visible objectives in the current tree
+                        const tree = buildObjectiveTree(getHierarchyFilteredObjectives(filteredObjectives, search));
+                        // Collect all ids recursively
+                        function collectIds(nodes: (Objective & { children?: Objective[] })[]): string[] {
+                          return nodes.flatMap(node => [node.id, ...(node.children ? collectIds(node.children) : [])]);
+                        }
+                        const allIds = collectIds(tree);
+                        const anyCollapsed = allIds.some(id => expandedObjectives[id] === false);
+                        setExpandedObjectives(prev => {
+                          const next: { [id: string]: boolean } = { ...prev };
+                          allIds.forEach(id => {
+                            next[id] = anyCollapsed; // expand if any are collapsed, else collapse all
+                          });
+                          return next;
+                        });
+                      }}
+                    >
+                      {Object.values(expandedObjectives).some(v => v === false) ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </th>
               <th className="text-left p-2 border-b w-48">Objective</th>
               {quarters.map((q, idx) => (
                 <th
@@ -365,9 +429,36 @@ export default function GanttChart() {
               ? levels.map(level => {
                   // Only show objectives matching the search
                   const levelObjs = filteredObjectives.filter(obj => obj.level === level && (!search || obj.title.toLowerCase().includes(search.toLowerCase())));
-                  return levelObjs.length > 0
-                    ? buildObjectiveTree(levelObjs).flatMap(obj => renderObjectiveRow(obj, level, 0))
-                    : null;
+                  if (levelObjs.length === 0) return null;
+                  const isExpanded = expandedLevels[level] !== false;
+                  return [
+                    // Panel header row
+                    <tr key={level + '-header'} className={
+                      level === 'company' ? 'bg-blue-50' :
+                      level === 'team' ? 'bg-green-50' :
+                      'bg-purple-50'
+                    }>
+                      <td colSpan={2 + quarters.length} className="p-2 border-b align-middle">
+                        <div className="flex items-center">
+                          <button
+                            className="mr-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
+                            aria-label={isExpanded ? `Collapse ${level} objectives` : `Expand ${level} objectives`}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setExpandedLevels(prev => ({ ...prev, [level]: !isExpanded }));
+                            }}
+                          >
+                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          </button>
+                          <span className={`inline-flex items-center justify-center mr-2 align-middle ${levelIcons[level].color}`}>{levelIcons[level].icon}</span>
+                          <span className="font-semibold text-lg capitalize">{level} Objectives</span>
+                          <span className="ml-2 text-xs text-gray-500">({levelObjs.length})</span>
+                        </div>
+                      </td>
+                    </tr>,
+                    // Objective rows
+                    isExpanded ? buildObjectiveTree(levelObjs).flatMap(obj => renderObjectiveRow(obj, level, 0)) : null
+                  ];
                 })
               : buildObjectiveTree(getHierarchyFilteredObjectives(filteredObjectives, search)).flatMap(obj => renderObjectiveRow(obj, obj.level, 0))}
           </tbody>
