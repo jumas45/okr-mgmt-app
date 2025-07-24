@@ -111,16 +111,16 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               Track and manage your objectives and key results
             </p>
           </div>
-          <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row items-center gap-2 w-full">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
               aria-label="Create new objective"
             >
               <Plus className="w-4 h-4" aria-hidden="true" />
               <span>New Objective</span>
             </button>
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex items-center gap-2 w-full">
               <div className="relative w-full">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                   <Search className="w-5 h-5" />
