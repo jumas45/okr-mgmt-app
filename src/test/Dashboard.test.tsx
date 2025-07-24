@@ -51,4 +51,10 @@ describe('Dashboard', () => {
     // Both the header and the card title remain, so expect 2
     expect(screen.getAllByText((c) => c.includes('Company Objective')).length).toBe(2);
   });
+
+  it('renders a full width search objectives textbox', () => {
+    render(<Dashboard searchTerm="" />);
+    const searchBox = screen.getByPlaceholderText('Search objectives...');
+    expect(searchBox).toHaveClass('w-full');
+  });
 }); 

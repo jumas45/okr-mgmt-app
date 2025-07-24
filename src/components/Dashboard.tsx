@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, ChevronDown, ChevronRight, Search, Building2, Users2, User, Target, X } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Building2, Users2, User, Target } from 'lucide-react';
 import { useOKRData } from '../hooks/useOKRData';
 import { Quarter } from '../types';
 import ObjectiveCard from './ObjectiveCard';
 import CreateObjectiveModal from './CreateObjectiveModal';
 import ObjectiveDetail from './ObjectiveDetail';
-import type { Objective, OKRLevel } from '../types';
+import type { Objective } from '../types';
 
 interface DashboardProps {
   searchTerm: string;
@@ -15,10 +15,7 @@ interface DashboardProps {
 export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
   const { getCurrentObjectives, settings, currentWorkspace } = useOKRData();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createLevel, setCreateLevel] = useState<OKRLevel | null>(null);
   // Remove searchTerm from Dashboard; will be handled in Header
-  const [filterLevel, setFilterLevel] = useState<OKRLevel | 'all'>('all');
-  const [filteredModal, setFilteredModal] = useState<{ title: string; objectives: typeof objectives } | null>(null);
   const [detailObjective, setDetailObjective] = useState<Objective | null>(null);
 
   const { currentQuarter, currentYear } = settings;
@@ -43,7 +40,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
   const filteredObjectives = objectives.filter(obj => {
     const matchesSearch = obj.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       obj.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterLevel === 'all' || obj.level === filterLevel;
+    const matchesFilter = true; // No filter applied in this version
     return matchesSearch && matchesFilter;
   });
 
@@ -84,14 +81,6 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
   const overallProgress = rootObjectives.length > 0 
     ? Math.round(rootObjectives.reduce((sum, obj) => sum + obj.progress, 0) / rootObjectives.length)
     : 0;
-
-  // Helper to open modal with filtered objectives
-  const openFilteredModal = (title: string, filterFn: (obj: typeof objectives[0]) => boolean) => {
-    setFilteredModal({
-      title,
-      objectives: objectives.filter(filterFn)
-    });
-  };
 
   // Map progress % to text color using Analytics Progress Distribution legend
   const progressTextColor = (progress: number) => {
@@ -153,7 +142,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
         {/* Progress Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition"
-            onClick={() => openFilteredModal('All Objectives', () => true)}
+            onClick={() => {}}
           >
             <h3 className="text-sm font-medium text-gray-600 mb-2">Overall Progress</h3>
             <div className="text-3xl font-bold text-gray-900 mb-2">{overallProgress}%</div>
@@ -165,13 +154,13 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
             </div>
           </div>
           <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-green-50 transition"
-            onClick={() => openFilteredModal('Total Objectives', () => true)}
+            onClick={() => {}}
           >
             <h3 className="text-sm font-medium text-gray-600 mb-2">Total Objectives</h3>
             <div className="text-3xl font-bold text-gray-900">{objectives.length}</div>
           </div>
           <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-purple-50 transition"
-            onClick={() => openFilteredModal('Objectives with Key Results', obj => obj.keyResults.length > 0)}
+            onClick={() => {}}
           >
             <h3 className="text-sm font-medium text-gray-600 mb-2">Key Results</h3>
             <div className="text-3xl font-bold text-gray-900">
@@ -179,7 +168,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
             </div>
           </div>
           <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-amber-50 transition"
-            onClick={() => openFilteredModal('Completed Objectives', obj => obj.progress === 100)}
+            onClick={() => {}}
           >
             <h3 className="text-sm font-medium text-gray-600 mb-2">Completed</h3>
             <div className="text-3xl font-bold text-green-600">
@@ -218,7 +207,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               </h3>
               <button
                 className="ml-2 bg-blue-600 text-white px-2 py-1 rounded flex items-center space-x-1 hover:bg-blue-700 text-xs"
-                onClick={e => { e.stopPropagation(); setCreateLevel('company'); }}
+                onClick={e => { e.stopPropagation(); }}
                 title="Add Company Objective"
                 aria-label="Add Company Objective"
               >
@@ -262,7 +251,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               </h3>
               <button
                 className="ml-2 bg-green-600 text-white px-2 py-1 rounded flex items-center space-x-1 hover:bg-green-700 text-xs"
-                onClick={e => { e.stopPropagation(); setCreateLevel('team'); }}
+                onClick={e => { e.stopPropagation(); }}
                 title="Add Team Objective"
                 aria-label="Add Team Objective"
               >
@@ -305,7 +294,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               </h3>
               <button
                 className="ml-2 bg-purple-600 text-white px-2 py-1 rounded flex items-center space-x-1 hover:bg-purple-700 text-xs"
-                onClick={e => { e.stopPropagation(); setCreateLevel('individual'); }}
+                onClick={e => { e.stopPropagation(); }}
                 title="Add Individual Objective"
                 aria-label="Add Individual Objective"
               >
@@ -357,4 +346,47 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
                 .map(obj => (
                   <button
                     key={obj.id}
-                    className={`
+                    className="flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors cursor-pointer"
+                    onClick={() => setDetailObjective(obj)}
+                    aria-label={`View details for ${obj.title}`}
+                  >
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 truncate">{obj.title}</h4>
+                      <p className="text-xs text-gray-600">
+                        Updated {new Date(obj.updatedAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">{obj.progress}%</div>
+                      <div className="w-12 bg-gray-200 rounded-full h-1 mt-1">
+                        <div 
+                          className={`h-1 rounded-full ${
+                            obj.progress === 0 ? 'bg-gray-400' :
+                            obj.progress < 40 ? 'bg-red-500' :
+                            obj.progress < 70 ? 'bg-amber-500' :
+                            obj.progress < 100 ? 'bg-blue-500' :
+                            'bg-green-500'
+                          }`}
+                          style={{ width: `${obj.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Create Objective Modal */}
+      {showCreateModal && (
+        <CreateObjectiveModal onClose={() => setShowCreateModal(false)} />
+      )}
+
+      {/* Objective Detail Modal */}
+      {detailObjective && (
+        <ObjectiveDetail objective={detailObjective} onClose={() => setDetailObjective(null)} />
+      )}
+    </div>
+  );
+}
