@@ -82,6 +82,12 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
     individual: { icon: <User className="w-4 h-4" />, color: 'text-purple-600' },
   };
 
+  const levelBg: Record<string, string> = {
+    company: 'bg-blue-50',
+    team: 'bg-green-50',
+    individual: 'bg-purple-50',
+  };
+
   // Archive modal logic
   const allDescendants = getDescendantsWithLevels(objective.id, objectives);
   const companyCount = (objective.level === 'company' ? 1 : 0) + allDescendants.filter(o => o.level === 'company').length;
@@ -136,7 +142,7 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
         </div>
       )}
       <div 
-        className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer min-w-[260px] max-w-[320px] flex flex-col justify-between group"
+        className={`rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer min-w-[260px] max-w-[320px] flex flex-col justify-between group ${levelBg[currentObjective.level] || 'bg-white'}`}
         style={{ minHeight: 190 }}
         onClick={(e) => {
           // Don't trigger if clicking on menu or buttons
@@ -284,13 +290,7 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
             </span>
             <span className="text-sm text-gray-700 font-medium ml-1">{currentObjective.owner}</span>
           </div>
-          <button
-            onClick={e => { e.stopPropagation(); setShowDetail(true); }}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
-          >
-            <span>View Details</span>
-            <ChevronRight className="w-4 h-4" aria-hidden="true" />
-          </button>
+          {/* Removed 'View Details' link/button */}
         </div>
       </div>
 
