@@ -6,6 +6,7 @@ import ObjectiveCard from './ObjectiveCard';
 import CreateObjectiveModal from './CreateObjectiveModal';
 import ObjectiveDetail from './ObjectiveDetail';
 import type { Objective } from '../types';
+import type { OKRLevel } from '../types';
 
 interface DashboardProps {
   searchTerm: string;
@@ -15,6 +16,7 @@ interface DashboardProps {
 export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
   const { getCurrentObjectives, settings, currentWorkspace } = useOKRData();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createLevel, setCreateLevel] = useState<OKRLevel | null>(null);
   // Remove searchTerm from Dashboard; will be handled in Header
   const [detailObjective, setDetailObjective] = useState<Objective | null>(null);
 
@@ -213,7 +215,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               </h3>
               <button
                 className="ml-2 bg-blue-600 text-white px-2 py-1 rounded flex items-center space-x-1 hover:bg-blue-700 text-xs"
-                onClick={e => { e.stopPropagation(); }}
+                onClick={e => { e.stopPropagation(); setCreateLevel('company'); setShowCreateModal(true); }}
                 title="Add Company Objective"
                 aria-label="Add Company Objective"
               >
@@ -257,7 +259,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               </h3>
               <button
                 className="ml-2 bg-green-600 text-white px-2 py-1 rounded flex items-center space-x-1 hover:bg-green-700 text-xs"
-                onClick={e => { e.stopPropagation(); }}
+                onClick={e => { e.stopPropagation(); setCreateLevel('team'); setShowCreateModal(true); }}
                 title="Add Team Objective"
                 aria-label="Add Team Objective"
               >
@@ -300,7 +302,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
               </h3>
               <button
                 className="ml-2 bg-purple-600 text-white px-2 py-1 rounded flex items-center space-x-1 hover:bg-purple-700 text-xs"
-                onClick={e => { e.stopPropagation(); }}
+                onClick={e => { e.stopPropagation(); setCreateLevel('individual'); setShowCreateModal(true); }}
                 title="Add Individual Objective"
                 aria-label="Add Individual Objective"
               >
@@ -386,7 +388,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
 
       {/* Create Objective Modal */}
       {showCreateModal && (
-        <CreateObjectiveModal onClose={() => setShowCreateModal(false)} />
+        <CreateObjectiveModal onClose={() => { setShowCreateModal(false); setCreateLevel(null); }} initialLevel={createLevel || undefined} />
       )}
 
       {/* Objective Detail Modal */}
