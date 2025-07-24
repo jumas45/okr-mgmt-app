@@ -1,19 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Mock } from 'vitest';
 import ObjectiveCard from '../components/ObjectiveCard';
 import { Objective } from '../types';
 
-// Mock the useOKRData hook with a proper mock function
-const mockUseOKRData = vi.fn();
+// Module-scoped mock object for useOKRData
+const mockOKRData: Record<string, unknown> = {};
 vi.mock('../hooks/useOKRData', () => ({
-  useOKRData: mockUseOKRData
+  useOKRData: () => mockOKRData
 }));
-
-const mockUpdateObjective = vi.fn();
-const mockDeleteObjective = vi.fn();
-const mockArchiveObjective = vi.fn();
 
 const mockObjective: Objective = {
   id: 'test-obj-1',
@@ -23,6 +18,10 @@ const mockObjective: Objective = {
   owner: 'John Doe',
   quarter: 'Q1',
   year: 2025,
+  startQuarter: 'Q1',
+  startYear: 2025,
+  endQuarter: 'Q4',
+  endYear: 2025,
   progress: 50,
   status: 'on-track',
   keyResults: [
@@ -38,27 +37,27 @@ const mockObjective: Objective = {
       owner: 'John Doe',
       checkIns: [],
       createdAt: '2025-01-01T00:00:00.000Z',
-      updatedAt: '2025-01-01T00:00:00.000Z'
+      updatedAt: '2025-01-01T00:00:00.000Z',
+      workspaceId: 'workspace-1',
     }
   ],
   tags: [],
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-01T00:00:00.000Z',
-  archived: false
+  archived: false,
+  workspaceId: 'workspace-1',
 };
 
 describe('ObjectiveCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
     // Setup default mock implementation
-    mockUseOKRData.mockReturnValue({
-      objectives: [mockObjective],
-      updateTrigger: 0,
-      deleteObjective: mockDeleteObjective,
-      archiveObjective: mockArchiveObjective,
-      updateObjective: mockUpdateObjective,
-    });
+    mockOKRData.objectives = [mockObjective];
+    mockOKRData.updateTrigger = 0;
+    mockOKRData.deleteObjective = vi.fn();
+    mockOKRData.archiveObjective = vi.fn();
+    mockOKRData.updateObjective = vi.fn();
+    mockOKRData.settings = { currentQuarter: 'Q1', currentYear: 2025 };
   });
 
   it('renders objective card with correct data', () => {
@@ -99,7 +98,7 @@ describe('ObjectiveCard', () => {
     const user = userEvent.setup();
     render(<ObjectiveCard objective={mockObjective} />);
     
-    const menuButton = screen.getByRole('button', { name: 'Objective options' });
+    const menuButton = screen.getByRole('button', { name: 'Show objective options menu' });
     await user.click(menuButton);
     
     // Should show menu, not modal
@@ -114,13 +113,11 @@ describe('ObjectiveCard', () => {
     const updatedObjective = { ...mockObjective, progress: 75, title: 'Updated Title' };
     
     // Mock the hook to return updated data
-    mockUseOKRData.mockReturnValue({
-      objectives: [updatedObjective],
-      updateTrigger: 1,
-      deleteObjective: mockDeleteObjective,
-      archiveObjective: mockArchiveObjective,
-      updateObjective: mockUpdateObjective,
-    });
+    mockOKRData.objectives = [updatedObjective];
+    mockOKRData.updateTrigger = 1;
+    mockOKRData.deleteObjective = vi.fn();
+    mockOKRData.archiveObjective = vi.fn();
+    mockOKRData.updateObjective = vi.fn();
     
     rerender(<ObjectiveCard objective={mockObjective} />);
     

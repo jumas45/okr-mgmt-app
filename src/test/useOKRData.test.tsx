@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useOKRData } from '../hooks/useOKRData';
+import { OKRDataProvider } from '../hooks/OKRDataContext';
 
 // Mock localStorage
 const localStorageMock = {
@@ -11,6 +12,12 @@ const localStorageMock = {
 };
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+function customRenderHook(callback) {
+  return renderHook(callback, {
+    wrapper: ({ children }) => <OKRDataProvider>{children}</OKRDataProvider>,
+  });
+}
+
 describe('useOKRData', () => {
   beforeEach(() => {
     localStorageMock.getItem.mockReturnValue(null);
@@ -18,7 +25,7 @@ describe('useOKRData', () => {
   });
 
   it('should add objective and trigger update', () => {
-    const { result } = renderHook(() => useOKRData());
+    const { result } = customRenderHook(() => useOKRData());
     const initialTrigger = result.current.updateTrigger;
 
     act(() => {
@@ -42,7 +49,7 @@ describe('useOKRData', () => {
   });
 
   it('should update objective and trigger update', () => {
-    const { result } = renderHook(() => useOKRData());
+    const { result } = customRenderHook(() => useOKRData());
 
     // First add an objective
     act(() => {
@@ -63,6 +70,19 @@ describe('useOKRData', () => {
     const objectiveId = result.current.objectives[0].id;
     const triggerBeforeUpdate = result.current.updateTrigger;
 
+    // Add a key result so progress can be updated
+    act(() => {
+      result.current.addKeyResult(objectiveId, {
+        title: 'Test Key Result',
+        type: 'number',
+        startValue: 0,
+        targetValue: 100,
+        currentValue: 75,
+        owner: 'John Doe',
+        status: 'on-track'
+      });
+    });
+
     // Then update it
     act(() => {
       result.current.updateObjective(objectiveId, {
@@ -74,11 +94,11 @@ describe('useOKRData', () => {
     expect(result.current.objectives[0].title).toBe('Updated Objective');
     expect(result.current.objectives[0].progress).toBe(75);
     expect(result.current.objectives[0].status).toBe('on-track');
-    expect(result.current.updateTrigger).toBe(triggerBeforeUpdate + 1);
+    expect(result.current.updateTrigger).toBe(triggerBeforeUpdate + 2);
   });
 
   it('should add key result and update objective progress', () => {
-    const { result } = renderHook(() => useOKRData());
+    const { result } = customRenderHook(() => useOKRData());
 
     // Add objective first
     act(() => {
@@ -118,7 +138,7 @@ describe('useOKRData', () => {
   });
 
   it('should update key result and recalculate objective progress', () => {
-    const { result } = renderHook(() => useOKRData());
+    const { result } = customRenderHook(() => useOKRData());
 
     // Setup objective with key result
     act(() => {
