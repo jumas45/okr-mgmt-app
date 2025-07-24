@@ -98,6 +98,12 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
     individual: { icon: <User className="w-4 h-4" />, color: 'text-purple-600' },
   };
 
+  const levelBg: Record<string, string> = {
+    company: 'bg-blue-50',
+    team: 'bg-green-50',
+    individual: 'bg-purple-50',
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header Section */}
@@ -187,7 +193,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {/* Company Objectives Panel */}
           <section>
             <div
-              className="flex items-center cursor-pointer mb-2 rounded px-3 py-2 select-none"
+              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 bg-blue-50"
               style={{ background: '#e0edfa' }}
               onClick={() => setShowCompany((v: boolean) => !v)}
             >
@@ -231,7 +237,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {/* Team Objectives Panel */}
           <section>
             <div
-              className="flex items-center cursor-pointer mb-2 rounded px-3 py-2"
+              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 bg-green-50"
               style={{ background: '#f0fdf4' }}
               onClick={() => setShowTeam((v: boolean) => !v)}
             >
@@ -274,7 +280,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {/* Individual Objectives Panel */}
           <section>
             <div
-              className="flex items-center cursor-pointer mb-2 rounded px-3 py-2"
+              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 bg-purple-50"
               style={{ background: '#f3e8fa' }}
               onClick={() => setShowIndividual((v: boolean) => !v)}
             >
@@ -346,7 +352,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
                 .map(obj => (
                   <button
                     key={obj.id}
-                    className="flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors cursor-pointer"
+                    className={`flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors cursor-pointer ${levelBg[obj.level] || 'bg-white'}`}
                     onClick={() => setDetailObjective(obj)}
                     aria-label={`View details for ${obj.title}`}
                   >
