@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useOKRData } from '../hooks/useOKRData';
-import { ChevronDown, ChevronRight, User, Users2, Building2, ArrowUp, ArrowDown, Search } from 'lucide-react';
-import type { Objective, KeyResult } from '../types';
+import { User, Users2, Building2, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import type { Objective } from '../types';
+import ObjectiveDetail from './ObjectiveDetail';
 
 const levelIcons: Record<string, React.ReactNode> = {
   company: <Building2 className="w-4 h-4 text-blue-600" />,
@@ -65,17 +66,32 @@ function getHierarchyFilteredObjectives(objs: Objective[], search: string): Obje
   return objs.filter(obj => result.has(obj.id));
 }
 
+// Helper: build a tree of objectives by parentId
+function buildObjectiveTree(objs: Objective[]): (Objective & { children?: Objective[] })[] {
+  const idToNode: Record<string, Objective & { children?: Objective[] }> = {};
+  objs.forEach(obj => { idToNode[obj.id] = { ...obj, children: [] }; });
+  const roots: (Objective & { children?: Objective[] })[] = [];
+  objs.forEach(obj => {
+    if (obj.parentId && idToNode[obj.parentId]) {
+      idToNode[obj.parentId].children!.push(idToNode[obj.id]);
+    } else {
+      roots.push(idToNode[obj.id]);
+    }
+  });
+  return roots;
+}
+
 export default function OkrList() {
   const { getCurrentObjectives } = useOKRData();
   const objectives = getCurrentObjectives();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [sortKey, setSortKey] = useState<string>('title');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [search, setSearch] = useState('');
+  const [detailObjective, setDetailObjective] = useState<Objective | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const searchLower = search.toLowerCase();
   const filtered = getHierarchyFilteredObjectives(objectives, searchLower);
-
   const sorted = [...filtered].sort((a, b) => {
     const va = getSortValue(a, sortKey);
     const vb = getSortValue(b, sortKey);
@@ -83,6 +99,97 @@ export default function OkrList() {
     if (va > vb) return sortDir === 'asc' ? 1 : -1;
     return 0;
   });
+
+  // Render tree recursively
+  function renderObjectiveRow(obj: Objective & { children?: Objective[] }, depth = 0): React.ReactNode[] {
+    const hasChildren = obj.children && obj.children.length > 0;
+    const isExpanded = expanded[obj.id] !== false;
+    return [
+      <tr
+        key={obj.id}
+        className={
+          `border-b transition ` +
+          (obj.level === 'company' ? 'bg-blue-50 hover:bg-blue-100' :
+           obj.level === 'team' ? 'bg-green-50 hover:bg-green-100' :
+           'bg-purple-50 hover:bg-purple-100')
+        }
+        onClick={e => {
+          if (!(e.target as HTMLElement).closest('button')) {
+            setDetailObjective(obj);
+          }
+        }}
+        style={{ cursor: 'pointer' }}
+      >
+        <td className="p-3 flex items-center gap-2" style={{ paddingLeft: 16 + depth * 24 }}>
+          {hasChildren && (
+            <button
+              className="focus:outline-none mr-1"
+              aria-label={isExpanded ? 'Collapse children' : 'Expand children'}
+              tabIndex={0}
+              onClick={e => {
+                e.stopPropagation();
+                setExpanded(prev => ({ ...prev, [obj.id]: !isExpanded }));
+              }}
+            >
+              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+          )}
+          {levelIcons[obj.level]}
+          <span className="font-medium text-blue-900">{obj.title}</span>
+        </td>
+        <td className="p-3">{obj.owner}</td>
+        <td className="p-3">
+          {obj.tags && obj.tags.length > 0 ? (
+            <span className="flex flex-wrap gap-1">
+              {obj.tags.map(tag => (
+                <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
+                  {tag}
+                </span>
+              ))}
+            </span>
+          ) : '-'}
+        </td>
+        <td className="p-3">
+          <div className="flex items-center gap-2">
+            <ProgressBar value={obj.progress} />
+            <span className={
+              'font-semibold ' +
+              (obj.progress === 0 ? 'text-gray-400' :
+               obj.progress >= 70 ? 'text-green-600' :
+               obj.progress >= 40 ? 'text-amber-600' :
+               'text-red-600')
+            }>
+              {obj.progress}%
+            </span>
+          </div>
+        </td>
+        <td className="p-3">{obj.level.charAt(0).toUpperCase() + obj.level.slice(1)}</td>
+        <td className="p-3">{obj.startQuarter} {obj.startYear} - {obj.endQuarter} {obj.endYear}</td>
+        <td className="p-3">{obj.endQuarter} {obj.endYear}</td>
+      </tr>,
+      isExpanded && hasChildren
+        ? obj.children!.flatMap(child => renderObjectiveRow(child, depth + 1))
+        : null
+    ];
+  }
+
+  // For expand/collapse all
+  function handleExpandCollapseAll() {
+    const tree = buildObjectiveTree(sorted);
+    // Collect all ids recursively
+    function collectIds(nodes: (Objective & { children?: Objective[] })[]): string[] {
+      return nodes.flatMap(node => [node.id, ...(node.children ? collectIds(node.children) : [])]);
+    }
+    const allIds = collectIds(tree);
+    const anyCollapsed = allIds.some(id => expanded[id] === false);
+    setExpanded(prev => {
+      const next: Record<string, boolean> = { ...prev };
+      allIds.forEach(id => {
+        next[id] = anyCollapsed;
+      });
+      return next;
+    });
+  }
 
   function handleSort(key: string) {
     if (sortKey === key) {
@@ -130,17 +237,10 @@ export default function OkrList() {
                     type="button"
                     onClick={e => {
                       e.stopPropagation();
-                      const anyCollapsed = sorted.some(obj => obj.keyResults.length > 0 && !expanded[obj.id]);
-                      setExpanded(prev => {
-                        const next = { ...prev };
-                        sorted.forEach(obj => {
-                          if (obj.keyResults.length > 0) next[obj.id] = anyCollapsed;
-                        });
-                        return next;
-                      });
+                      handleExpandCollapseAll();
                     }}
                   >
-                    {sorted.some(obj => obj.keyResults.length > 0 && !expanded[obj.id]) ? (
+                    {Object.values(expanded).some(v => v === false) ? (
                       <ChevronRight className="w-4 h-4" />
                     ) : (
                       <ChevronDown className="w-4 h-4" />
@@ -226,95 +326,20 @@ export default function OkrList() {
             </tr>
           </thead>
           <tbody>
-            {sorted.map(obj => (
-              <React.Fragment key={obj.id}>
-                <tr
-                  className={
-                    `border-b transition ` +
-                    (obj.level === 'company' ? 'bg-blue-50 hover:bg-blue-100' :
-                     obj.level === 'team' ? 'bg-green-50 hover:bg-green-100' :
-                     'bg-purple-50 hover:bg-purple-100')
-                  }
-                >
-                  <td className="p-3 flex items-center gap-2">
-                    <button
-                      className="focus:outline-none"
-                      onClick={() => setExpanded(e => ({ ...e, [obj.id]: !e[obj.id] }))}
-                      aria-label={expanded[obj.id] ? 'Collapse key results' : 'Expand key results'}
-                    >
-                      {obj.keyResults.length > 0 ? (
-                        expanded[obj.id] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-                      ) : null}
-                    </button>
-                    {levelIcons[obj.level]}
-                    <span className="font-medium text-blue-900">{obj.title}</span>
-                  </td>
-                  <td className="p-3">{obj.owner}</td>
-                  <td className="p-3">
-                    {obj.tags && obj.tags.length > 0 ? (
-                      <span className="flex flex-wrap gap-1">
-                        {obj.tags.map(tag => (
-                          <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
-                            {tag}
-                          </span>
-                        ))}
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <ProgressBar value={obj.progress} />
-                      <span className={
-                        'font-semibold ' +
-                        (obj.progress === 0 ? 'text-gray-400' :
-                         obj.progress >= 70 ? 'text-green-600' :
-                         obj.progress >= 40 ? 'text-amber-600' :
-                         'text-red-600')
-                      }>
-                        {obj.progress}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-3">{obj.level.charAt(0).toUpperCase() + obj.level.slice(1)}</td>
-                  <td className="p-3">{obj.startQuarter} {obj.startYear} - {obj.endQuarter} {obj.endYear}</td>
-                  <td className="p-3">{obj.endQuarter} {obj.endYear}</td>
-                </tr>
-                {expanded[obj.id] && obj.keyResults.length > 0 && (
-                  <tr className="bg-gray-50">
-                    <td colSpan={10} className="p-0">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="p-2 text-left font-semibold">Key Result</th>
-                            <th className="p-2 text-left font-semibold">Type</th>
-                            <th className="p-2 text-left font-semibold">Owner</th>
-                            <th className="p-2 text-left font-semibold">Progress</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {obj.keyResults.map((kr: KeyResult) => (
-                            <tr key={kr.id} className="border-b">
-                              <td className="p-2">{kr.title}</td>
-                              <td className="p-2">{kr.type}</td>
-                              <td className="p-2">{kr.owner}</td>
-                              <td className="p-2">
-                                <div className="flex items-center gap-2">
-                                  <ProgressBar value={kr.progress} />
-                                  <span className="font-semibold text-gray-700">{kr.progress}%</span>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
+            {buildObjectiveTree(sorted).flatMap(obj => renderObjectiveRow(obj, 0))}
           </tbody>
         </table>
       </div>
+      {detailObjective && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setDetailObjective(null)}
+        >
+          <div onClick={e => e.stopPropagation()}>
+            <ObjectiveDetail objective={detailObjective} onClose={() => setDetailObjective(null)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
