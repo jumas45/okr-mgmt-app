@@ -138,17 +138,7 @@ export default function OkrList() {
           <span className="font-medium text-blue-900">{obj.title}</span>
         </td>
         <td className="p-3">{obj.owner}</td>
-        <td className="p-3">
-          {obj.tags && obj.tags.length > 0 ? (
-            <span className="flex flex-wrap gap-1">
-              {obj.tags.map(tag => (
-                <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
-                  {tag}
-                </span>
-              ))}
-            </span>
-          ) : '-'}
-        </td>
+        <td className="p-3">{obj.level.charAt(0).toUpperCase() + obj.level.slice(1)}</td>
         <td className="p-3">
           <div className="flex items-center gap-2">
             <ProgressBar value={obj.progress} />
@@ -163,8 +153,20 @@ export default function OkrList() {
             </span>
           </div>
         </td>
-        <td className="p-3">{obj.level.charAt(0).toUpperCase() + obj.level.slice(1)}</td>
-        <td className="p-3">{obj.startQuarter} {obj.startYear} - {obj.endQuarter} {obj.endYear}</td>
+        <td className="p-3">
+          {obj.tags && obj.tags.length > 0 ? (
+            <span className="flex flex-wrap gap-1">
+              {obj.tags.map(tag => (
+                <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
+                  {tag}
+                </span>
+              ))}
+            </span>
+          ) : '-'}
+        </td>
+        <td className="p-3">
+          {obj.startQuarter} {obj.startYear} - {obj.endQuarter} {obj.endYear}
+        </td>
         <td className="p-3">{obj.endQuarter} {obj.endYear}</td>
       </tr>,
       isExpanded && hasChildren
@@ -264,13 +266,13 @@ export default function OkrList() {
                 </span>
               </th>
               <th
-                key="tags"
+                key="level"
                 className="p-3 text-left font-semibold cursor-pointer select-none"
-                onClick={() => handleSort('tags')}
+                onClick={() => handleSort('level')}
               >
                 <span className="inline-flex items-center">
-                  Initiative
-                  {sortKey === 'tags' && (
+                  Level
+                  {sortKey === 'level' && (
                     sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
                   )}
                 </span>
@@ -288,13 +290,13 @@ export default function OkrList() {
                 </span>
               </th>
               <th
-                key="level"
+                key="tags"
                 className="p-3 text-left font-semibold cursor-pointer select-none"
-                onClick={() => handleSort('level')}
+                onClick={() => handleSort('tags')}
               >
                 <span className="inline-flex items-center">
-                  Team
-                  {sortKey === 'level' && (
+                  Tags
+                  {sortKey === 'tags' && (
                     sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
                   )}
                 </span>
