@@ -2,42 +2,95 @@ import { useState, useEffect } from 'react';
 // @ts-expect-error: sql.js has no types in this project
 import initSqlJs from 'sql.js';
 
-// Helper: Save Uint8Array to IndexedDB
+// Save SQLite database to IndexedDB
 function saveToIndexedDB(dbUint8: Uint8Array, key = 'okr-sqlite-db') {
-  const request = indexedDB.open('okr-db', 1);
-  request.onupgradeneeded = function () {
-    request.result.createObjectStore('db');
-  };
-  request.onsuccess = function () {
-    const db = request.result;
-    const tx = db.transaction('db', 'readwrite');
-    tx.objectStore('db').put(dbUint8, key);
-    tx.oncomplete = function () { db.close(); };
-  };
-}
-// Helper: Load Uint8Array from IndexedDB
-function loadFromIndexedDB(key = 'okr-sqlite-db'): Promise<Uint8Array | null> {
-  return new Promise((resolve) => {
-    const request = indexedDB.open('okr-db', 1);
-    request.onupgradeneeded = function () {
-      request.result.createObjectStore('db');
-    };
-    request.onsuccess = function () {
+  return new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open('OKRDatabase', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
       const db = request.result;
-      const tx = db.transaction('db', 'readonly');
-      const store = tx.objectStore('db');
-      const getReq = store.get(key);
-      getReq.onsuccess = function () {
-        resolve(getReq.result || null);
-        db.close();
-      };
-      getReq.onerror = function () {
-        resolve(null);
-        db.close();
-      };
+      const transaction = db.transaction(['databases'], 'readwrite');
+      const store = transaction.objectStore('databases');
+      const putRequest = store.put(dbUint8, key);
+      putRequest.onsuccess = () => resolve();
+      putRequest.onerror = () => reject(putRequest.error);
     };
-    request.onerror = function () { resolve(null); };
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('databases')) {
+        db.createObjectStore('databases');
+      }
+    };
   });
+}
+
+// Load SQLite database from IndexedDB
+function loadFromIndexedDB(key = 'okr-sqlite-db'): Promise<Uint8Array | null> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('OKRDatabase', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(['databases'], 'readonly');
+      const store = transaction.objectStore('databases');
+      const getRequest = store.get(key);
+      getRequest.onsuccess = () => resolve(getRequest.result || null);
+      getRequest.onerror = () => reject(getRequest.error);
+    };
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('databases')) {
+        db.createObjectStore('databases');
+      }
+    };
+  });
+}
+
+// Migration function to update existing data to support new status types
+function migrateStatusData(db: any) {
+  try {
+    // Check if we need to migrate status data
+    const checkRes = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='objectives'");
+    if (checkRes.length === 0) return; // No objectives table, nothing to migrate
+
+    // Get all objectives with old status values
+    const objectivesRes = db.exec('SELECT id, status FROM objectives');
+    if (objectivesRes.length === 0) return;
+
+    const objectives = objectivesRes[0];
+    let hasChanges = false;
+
+    for (const row of objectives.values) {
+      const [id, status] = row;
+      // Check if status needs migration (only valid statuses should remain)
+      const validStatuses = ['not-started', 'on-track', 'at-risk', 'behind', 'completed', 'on-hold', 'cancelled'];
+      if (status && !validStatuses.includes(status)) {
+        // Migrate invalid status to 'not-started' as default
+        db.run('UPDATE objectives SET status = ? WHERE id = ?', ['not-started', id]);
+        hasChanges = true;
+      }
+    }
+
+    // Also migrate key_results status if needed
+    const keyResultsRes = db.exec('SELECT id, status FROM key_results');
+    if (keyResultsRes.length > 0) {
+      const keyResults = keyResultsRes[0];
+      for (const row of keyResults.values) {
+        const [id, status] = row;
+        const validStatuses = ['not-started', 'on-track', 'at-risk', 'behind', 'completed', 'on-hold', 'cancelled'];
+        if (status && !validStatuses.includes(status)) {
+          db.run('UPDATE key_results SET status = ? WHERE id = ?', ['not-started', id]);
+          hasChanges = true;
+        }
+      }
+    }
+
+    if (hasChanges) {
+      console.log('SQLite: Migrated status data to support new status types');
+    }
+  } catch (error) {
+    console.error('SQLite: Error during status migration:', error);
+  }
 }
 
 // This hook provides a similar API to useLocalStorage, but uses a persistent SQLite DB (via sql.js + IndexedDB)
@@ -73,7 +126,7 @@ export function useSQLiteStorage<T>(key: string, initialValue: T) {
         endQuarter TEXT NOT NULL,
         endYear INTEGER NOT NULL,
         progress REAL NOT NULL,
-        status TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('not-started', 'on-track', 'at-risk', 'behind', 'completed', 'on-hold', 'cancelled')),
         parentId TEXT,
         workspaceId TEXT NOT NULL,
         tags TEXT,
@@ -92,7 +145,7 @@ export function useSQLiteStorage<T>(key: string, initialValue: T) {
         currentValue REAL NOT NULL,
         unit TEXT,
         progress REAL NOT NULL,
-        status TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('not-started', 'on-track', 'at-risk', 'behind', 'completed', 'on-hold', 'cancelled')),
         owner TEXT NOT NULL,
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL,
@@ -123,6 +176,10 @@ export function useSQLiteStorage<T>(key: string, initialValue: T) {
         defaultUserId TEXT,
         FOREIGN KEY(defaultUserId) REFERENCES users(id)
       )`);
+
+      // Run migration for new status types
+      migrateStatusData(db);
+
       setDb(db);
       // Try to load the value
       const res = db.exec('SELECT value FROM kv WHERE key = ?', [key]);
@@ -135,7 +192,7 @@ export function useSQLiteStorage<T>(key: string, initialValue: T) {
       }
     })();
     return () => { isMounted = false; };
-  }, [key]);
+  }, [key, initialValue]);
 
   const setValue = (value: T | ((val: T) => T)) => {
     if (!db) return;

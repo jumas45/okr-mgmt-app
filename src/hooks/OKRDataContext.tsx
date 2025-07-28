@@ -53,39 +53,71 @@ export async function migrateDataStore(direction: 'to-sqlite' | 'to-isolated') {
 
   // Open SQLite DB from IndexedDB
   function loadFromIndexedDB(key = 'okr-sqlite-db'): Promise<Uint8Array | null> {
-    return new Promise((resolve) => {
-      const request = indexedDB.open('okr-db', 1);
-      request.onupgradeneeded = function () {
-        request.result.createObjectStore('db');
-      };
-      request.onsuccess = function () {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('OKRDatabase', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
         const db = request.result;
-        const tx = db.transaction('db', 'readonly');
-        const store = tx.objectStore('db');
-        const getReq = store.get(key);
-        getReq.onsuccess = function () {
-          resolve(getReq.result || null);
-          db.close();
-        };
-        getReq.onerror = function () {
-          resolve(null);
-          db.close();
-        };
+        const transaction = db.transaction(['databases'], 'readonly');
+        const store = transaction.objectStore('databases');
+        const getRequest = store.get(key);
+        getRequest.onsuccess = () => resolve(getRequest.result || null);
+        getRequest.onerror = () => reject(getRequest.error);
       };
-      request.onerror = function () { resolve(null); };
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('databases')) {
+          db.createObjectStore('databases');
+        }
+      };
     });
   }
+
   function saveToIndexedDB(dbUint8: Uint8Array, key = 'okr-sqlite-db') {
-    const request = indexedDB.open('okr-db', 1);
-    request.onupgradeneeded = function () {
-      request.result.createObjectStore('db');
-    };
-    request.onsuccess = function () {
-      const db = request.result;
-      const tx = db.transaction('db', 'readwrite');
-      tx.objectStore('db').put(dbUint8, key);
-      tx.oncomplete = function () { db.close(); };
-    };
+    return new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('OKRDatabase', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['databases'], 'readwrite');
+        const store = transaction.objectStore('databases');
+        const putRequest = store.put(dbUint8, key);
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = () => reject(putRequest.error);
+      };
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('databases')) {
+          db.createObjectStore('databases');
+        }
+      };
+    });
+  }
+
+  // Function to validate and migrate status data
+  function validateAndMigrateStatus(objectives: any[]): any[] {
+    const validStatuses = ['not-started', 'on-track', 'at-risk', 'behind', 'completed', 'on-hold', 'cancelled'];
+    
+    return objectives.map(obj => {
+      // Validate objective status
+      if (obj.status && !validStatuses.includes(obj.status)) {
+        console.log(`Migrating invalid objective status: ${obj.status} -> not-started`);
+        obj.status = 'not-started';
+      }
+      
+      // Validate key results status
+      if (obj.keyResults && Array.isArray(obj.keyResults)) {
+        obj.keyResults = obj.keyResults.map((kr: any) => {
+          if (kr.status && !validStatuses.includes(kr.status)) {
+            console.log(`Migrating invalid key result status: ${kr.status} -> not-started`);
+            kr.status = 'not-started';
+          }
+          return kr;
+        });
+      }
+      
+      return obj;
+    });
   }
 
   const SQL = await initSqlJs({ locateFile: (file: string) => `https://sql.js.org/dist/${file}` });
@@ -99,16 +131,20 @@ export async function migrateDataStore(direction: 'to-sqlite' | 'to-isolated') {
   db.run('CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT)');
 
   if (direction === 'to-sqlite') {
-    db.run('INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)', ['okr-objectives', JSON.stringify(lsObjectives)]);
+    // Validate and migrate status data before storing
+    const validatedObjectives = validateAndMigrateStatus(lsObjectives);
+    db.run('INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)', ['okr-objectives', JSON.stringify(validatedObjectives)]);
     db.run('INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)', ['okr-settings', JSON.stringify(lsSettings)]);
     const dbUint8 = db.export();
-    saveToIndexedDB(dbUint8);
+    await saveToIndexedDB(dbUint8);
   } else {
     // Copy from SQLite to localStorage
     const resObj = db.exec('SELECT value FROM kv WHERE key = ?', ['okr-objectives']);
     const resSettings = db.exec('SELECT value FROM kv WHERE key = ?', ['okr-settings']);
     if (resObj[0] && resObj[0].values[0]) {
-      localStorage.setItem('okr-objectives', resObj[0].values[0][0]);
+      const objectives = JSON.parse(resObj[0].values[0][0]);
+      const validatedObjectives = validateAndMigrateStatus(objectives);
+      localStorage.setItem('okr-objectives', JSON.stringify(validatedObjectives));
     }
     if (resSettings[0] && resSettings[0].values[0]) {
       localStorage.setItem('okr-settings', resSettings[0].values[0][0]);
