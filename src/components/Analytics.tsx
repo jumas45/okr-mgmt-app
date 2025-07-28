@@ -31,8 +31,11 @@ export default function Analytics() {
   const completedObjectives = currentObjectives.filter(obj => obj.progress === 100).length;
   const onHoldObjectives = currentObjectives.filter(obj => obj.status === 'on-hold').length;
   const cancelledObjectives = currentObjectives.filter(obj => obj.status === 'cancelled').length;
-  const averageProgress = totalObjectives > 0 
-    ? Math.round(currentObjectives.reduce((sum, obj) => sum + obj.progress, 0) / totalObjectives)
+  
+  // Calculate average progress excluding on-hold and cancelled objectives
+  const activeObjectives = currentObjectives.filter(obj => obj.status !== 'on-hold' && obj.status !== 'cancelled');
+  const averageProgress = activeObjectives.length > 0 
+    ? Math.round(activeObjectives.reduce((sum, obj) => sum + obj.progress, 0) / activeObjectives.length)
     : 0;
 
   // Progress distribution

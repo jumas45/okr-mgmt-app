@@ -95,20 +95,20 @@ export async function migrateDataStore(direction: 'to-sqlite' | 'to-isolated') {
   }
 
   // Function to validate and migrate status data
-  function validateAndMigrateStatus(objectives: any[]): any[] {
+  function validateAndMigrateStatus(objectives: Record<string, unknown>[]): Record<string, unknown>[] {
     const validStatuses = ['not-started', 'on-track', 'at-risk', 'behind', 'completed', 'on-hold', 'cancelled'];
     
     return objectives.map(obj => {
       // Validate objective status
-      if (obj.status && !validStatuses.includes(obj.status)) {
+      if (obj.status && !validStatuses.includes(obj.status as string)) {
         console.log(`Migrating invalid objective status: ${obj.status} -> not-started`);
         obj.status = 'not-started';
       }
       
       // Validate key results status
       if (obj.keyResults && Array.isArray(obj.keyResults)) {
-        obj.keyResults = obj.keyResults.map((kr: any) => {
-          if (kr.status && !validStatuses.includes(kr.status)) {
+        obj.keyResults = obj.keyResults.map((kr: Record<string, unknown>) => {
+          if (kr.status && !validStatuses.includes(kr.status as string)) {
             console.log(`Migrating invalid key result status: ${kr.status} -> not-started`);
             kr.status = 'not-started';
           }
@@ -224,11 +224,20 @@ export function OKRDataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   function getRolledUpProgress(objective: Objective, allObjectives: Objective[]): number {
+    // If objective is on-hold or cancelled, return its current progress without affecting parent calculations
+    if (objective.status === 'on-hold' || objective.status === 'cancelled') {
+      return objective.progress;
+    }
+    
     const children = allObjectives.filter(child => child.parentId === objective.id);
     const keyResults = objective.keyResults || [];
-    const childProgresses = children.map(child => getRolledUpProgress(child, allObjectives));
+    
+    // Only include children that are not on-hold or cancelled in progress calculations
+    const activeChildren = children.filter(child => child.status !== 'on-hold' && child.status !== 'cancelled');
+    const childProgresses = activeChildren.map(child => getRolledUpProgress(child, allObjectives));
     const krProgresses = keyResults.map(kr => kr.progress);
     const allProgresses = [...childProgresses, ...krProgresses];
+    
     if (allProgresses.length > 0) {
       return Math.round(allProgresses.reduce((sum, p) => sum + p, 0) / allProgresses.length);
     }
@@ -249,9 +258,16 @@ export function OKRDataProvider({ children }: { children: React.ReactNode }) {
     if (!child || !child.parentId) return objs;
     const parent = objs.find(obj => obj.id === child.parentId);
     if (!parent) return objs;
-    // Recalculate parent's progress as average of its children's progress
+    
+    // Recalculate parent's progress as average of its active children's progress
     const children = objs.filter(obj => obj.parentId === parent.id);
-    const newProgress = children.length > 0 ? Math.round(children.reduce((sum, c) => sum + c.progress, 0) / children.length) : 0;
+    const activeChildren = children.filter(child => child.status !== 'on-hold' && child.status !== 'cancelled');
+    
+    let newProgress = 0;
+    if (activeChildren.length > 0) {
+      newProgress = Math.round(activeChildren.reduce((sum, c) => sum + c.progress, 0) / activeChildren.length);
+    }
+    
     const updatedObjs = objs.map(obj =>
       obj.id === parent.id
         ? {
