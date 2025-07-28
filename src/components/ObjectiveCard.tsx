@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight, MoreVertical, Edit, Trash2, User, X, Building2, Users2 } from 'lucide-react';
 import { Objective } from '../types';
 import { useOKRData } from '../hooks/useOKRData';
-import { calculateObjectiveStatus, getStatusColor, getProgressBarColor } from '../utils/calculations';
+import { getStatusColor, getProgressBarColor } from '../utils/calculations';
 import ObjectiveDetail from './ObjectiveDetail';
 
 interface ObjectiveCardProps {
@@ -51,7 +51,7 @@ function getDescendantsWithLevels(objId: string, allObjs: Objective[]): Objectiv
 }
 
 export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
-  const { deleteObjective, archiveObjective, objectives, updateTrigger } = useOKRData();
+  const { deleteObjective, archiveObjective, objectives } = useOKRData();
   const [showDetail, setShowDetail] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -61,10 +61,10 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
   // Get the current objective data to ensure we have the latest state
   const currentObjective = React.useMemo(() => 
     objectives.find(obj => obj.id === objective.id) || objective,
-    [objectives, objective.id, updateTrigger]
+    [objectives, objective]
   );
   
-  const status = calculateObjectiveStatus(objective.progress);
+  const status = currentObjective.status;
   const statusColor = React.useMemo(() => {
     return getStatusColor(status);
   }, [status]);

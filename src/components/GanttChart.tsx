@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOKRData } from '../hooks/useOKRData';
 import type { OKRLevel } from '../types';
 import type { Objective } from '../types';
-import { calculateObjectiveStatus, getProgressBarColor, getStatusColor } from '../utils/calculations';
+import { getProgressBarColor, getStatusColor } from '../utils/calculations';
 import ObjectiveDetail from './ObjectiveDetail';
 import { Quarter } from '../types';
 import { ChevronDown, ChevronRight, Search, Building2, Users2, User } from 'lucide-react';
@@ -145,9 +145,8 @@ export default function GanttChart() {
     const parentObj = obj.parentId ? objectives.find(o => o.id === obj.parentId) : null;
     const completedKRs = obj.keyResults.filter(kr => kr.progress === 100).length;
     const totalKRs = obj.keyResults.length;
-    const status = calculateObjectiveStatus(obj.progress);
     const barColor = getProgressBarColor(obj.progress);
-    const tooltipText = `${obj.title} (${status.replace('-', ' ')}: ${obj.progress}%)`;
+    const tooltipText = `${obj.title} (${obj.status.replace('-', ' ')}: ${obj.progress}%)`;
     const statusColor = getStatusColor(obj.status);
     const statusText = obj.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
     
