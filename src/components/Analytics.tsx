@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, TrendingUp, Target, Award, Archive, Building2, Users2, User, Pause, XCircle } from 'lucide-react';
+import { Target, Award, Archive, Building2, Users2, User, Pause, XCircle } from 'lucide-react';
 import { X as XIcon } from 'lucide-react';
 import { useOKRData } from '../hooks/useOKRData';
 import ObjectiveDetail from './ObjectiveDetail';
@@ -27,16 +27,9 @@ export default function Analytics() {
 
   // Calculate metrics
   const totalObjectives = currentObjectives.length;
-  const totalKeyResults = currentObjectives.reduce((sum, obj) => sum + obj.keyResults.length, 0);
   const completedObjectives = currentObjectives.filter(obj => obj.progress === 100).length;
   const onHoldObjectives = currentObjectives.filter(obj => obj.status === 'on-hold').length;
   const cancelledObjectives = currentObjectives.filter(obj => obj.status === 'cancelled').length;
-  
-  // Calculate average progress excluding on-hold and cancelled objectives
-  const activeObjectives = currentObjectives.filter(obj => obj.status !== 'on-hold' && obj.status !== 'cancelled');
-  const averageProgress = activeObjectives.length > 0 
-    ? Math.round(activeObjectives.reduce((sum, obj) => sum + obj.progress, 0) / activeObjectives.length)
-    : 0;
 
   // Progress distribution
   const progressRanges = {
@@ -102,7 +95,7 @@ export default function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition mb-2 mr-2"
           onClick={() => openFilteredModal('Active Objectives', obj => obj.progress < 100)}
         >
@@ -133,25 +126,7 @@ export default function Analytics() {
           <h3 className="text-sm font-medium text-red-700">Objectives Not Started</h3>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition mb-2 mr-2"
-          onClick={() => openFilteredModal('Key Results (Objectives with KRs)', obj => obj.keyResults.length > 0)}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <BarChart className="w-8 h-8 text-green-600" />
-            <span className="text-2xl font-bold text-gray-900">{totalKeyResults}</span>
-          </div>
-          <h3 className="text-sm font-medium text-gray-600">Key Results</h3>
-        </div>
 
-        <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-purple-50 transition mb-2 mr-2"
-          onClick={() => openFilteredModal('Objectives with Progress', obj => obj.progress > 0)}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <TrendingUp className="w-8 h-8 text-purple-600" />
-            <span className="text-2xl font-bold text-gray-900">{averageProgress}%</span>
-          </div>
-          <h3 className="text-sm font-medium text-gray-600">Average Progress</h3>
-        </div>
 
         <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-100 cursor-pointer hover:bg-yellow-100 transition mb-2 mr-2"
           onClick={() => setFilteredModal({ title: 'Archived Objectives', objectives: archivedObjectives })}
