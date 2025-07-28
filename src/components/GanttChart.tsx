@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOKRData } from '../hooks/useOKRData';
 import type { OKRLevel } from '../types';
 import type { Objective } from '../types';
-import { calculateObjectiveStatus, getProgressBarColor } from '../utils/calculations';
+import { calculateObjectiveStatus, getProgressBarColor, getStatusColor } from '../utils/calculations';
 import ObjectiveDetail from './ObjectiveDetail';
 import { Quarter } from '../types';
 import { ChevronDown, ChevronRight, Search, Building2, Users2, User } from 'lucide-react';
@@ -79,10 +79,6 @@ function matchesSearchOrDescendant(obj: Objective, objectives: Objective[], sear
 export default function GanttChart() {
   const { objectives, currentWorkspace } = useOKRData();
   const currentYear = new Date().getFullYear();
-  const [startYear, setStartYear] = useState(currentYear - 1);
-  const [endYear, setEndYear] = useState(currentYear + 1);
-  const [startQuarter, setStartQuarter] = useState<Quarter>('Q1');
-  const [endQuarter, setEndQuarter] = useState<Quarter>('Q4');
   const [detailObjective, setDetailObjective] = useState<null | { objective: Objective }>(null);
   const [grouping, setGrouping] = useState<GroupingMode>('hierarchy');
   const [expandedObjectives, setExpandedObjectives] = useState<{ [id: string]: boolean }>({});
@@ -90,7 +86,7 @@ export default function GanttChart() {
   const [expandedLevels, setExpandedLevels] = useState<{ [level in OKRLevel]?: boolean }>({ company: true, team: true, individual: true });
 
   // Collapsible panels state, persisted per workspace and period
-  const collapseKey = `okr-gantt-collapse-${currentWorkspace}-${startYear}-${startQuarter}-${endYear}-${endQuarter}`;
+  const collapseKey = `okr-gantt-collapse-${currentWorkspace}-${currentYear}-Q1-${currentYear}-Q4`;
   // Save on change (in case toggled elsewhere)
   useEffect(() => {
     localStorage.setItem(collapseKey, JSON.stringify({}));
@@ -108,21 +104,7 @@ export default function GanttChart() {
     return false;
   }
 
-  // Generate quarters in the selected range
-  const allQuarters = getQuartersBetween(startYear, endYear);
-  const quarters = allQuarters.filter(q =>
-    isAfterOrEqual(q.year, q.quarter, startYear, startQuarter) &&
-    isBeforeOrEqual(q.year, q.quarter, endYear, endQuarter)
-  );
-
-  // Filter objectives in the selected range (if any part of their span overlaps) and for current tenant
-  const filteredObjectives = objectives.filter(obj =>
-    obj.workspaceId === currentWorkspace &&
-    isBeforeOrEqual(obj.endYear, obj.endQuarter, endYear, endQuarter) &&
-    isAfterOrEqual(obj.startYear, obj.startQuarter, startYear, startQuarter)
-  );
-
-  // For hierarchy grouping: filter to show all parents of matches
+  // Helper: for a search, return all matching objectives and their parents
   function getHierarchyFilteredObjectives(objs: Objective[], search: string): Objective[] {
     if (!search) return objs;
     // Find all matching objectives (by title)
@@ -166,6 +148,9 @@ export default function GanttChart() {
     const status = calculateObjectiveStatus(obj.progress);
     const barColor = getProgressBarColor(obj.progress);
     const tooltipText = `${obj.title} (${status.replace('-', ' ')}: ${obj.progress}%)`;
+    const statusColor = getStatusColor(obj.status);
+    const statusText = obj.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
     return [
       <tr
         key={obj.id}
@@ -223,6 +208,11 @@ export default function GanttChart() {
             )}
           </div>
         </td>
+        <td className="p-2 border-b align-top">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+            {statusText}
+          </span>
+        </td>
         {quarters.map((q, idx) => {
           const inSpan =
             isAfterOrEqual(q.year, q.quarter, obj.startYear, obj.startQuarter) &&
@@ -250,6 +240,37 @@ export default function GanttChart() {
     ];
   }
 
+  const quarters = getQuartersBetween(currentYear - 1, currentYear + 1);
+  const filteredObjectives = getHierarchyFilteredObjectives(objectives, search);
+
+  // Group objectives by level for level grouping
+  const objectivesByLevel = levels.reduce((acc, level) => {
+    acc[level] = filteredObjectives.filter(obj => obj.level === level);
+    return acc;
+  }, {} as Record<OKRLevel, Objective[]>);
+
+  // Build tree for hierarchy grouping
+  const objectiveTree = buildObjectiveTree(filteredObjectives);
+
+  // Expand/collapse all functionality
+  function handleExpandCollapseAll() {
+    const allIds = new Set<string>();
+    function collectIds(nodes: (Objective & { children?: Objective[] })[]) {
+      nodes.forEach(node => {
+        allIds.add(node.id);
+        if (node.children) collectIds(node.children);
+      });
+    }
+    collectIds(objectiveTree);
+
+    const allExpanded = Object.values(expandedObjectives).every(v => v === true);
+    const newExpanded: Record<string, boolean> = {};
+    allIds.forEach(id => {
+      newExpanded[id] = !allExpanded;
+    });
+    setExpandedObjectives(newExpanded);
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h2 className="text-2xl font-bold mb-6">Timeline</h2>
@@ -259,229 +280,108 @@ export default function GanttChart() {
           className={`px-3 py-1 rounded ${grouping === 'level' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
           onClick={() => setGrouping('level')}
         >
-          By Level
+          Level
         </button>
         <button
           className={`px-3 py-1 rounded ${grouping === 'hierarchy' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
           onClick={() => setGrouping('hierarchy')}
         >
-          By Parent/Child
+          Parent/Child
         </button>
-        <div className="relative flex-1 min-w-0 ml-4">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            <Search className="w-5 h-5" />
-          </span>
+        <div className="flex items-center gap-2 ml-4">
+          <Search className="w-4 h-4 text-gray-400" />
           <input
             type="text"
-            className="border border-gray-300 rounded px-3 py-1 pl-10 w-full"
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
             placeholder="Search objectives..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
       </div>
-      <div className="flex items-center flex-wrap gap-4 mb-6">
-        <div className="flex flex-col sm:flex-row gap-0 p-2 rounded-xl border border-blue-200 bg-blue-50/50 shadow-sm w-full">
-          <div className="flex-1 min-w-0 flex flex-col bg-blue-50 p-2 rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none sm:rounded-br-none">
-            <div className="flex gap-2 w-full">
-              <div className="flex-1 min-w-0">
-                <label className="text-sm font-medium">Start Year:</label>
-                <select
-                  value={startYear}
-                  onChange={e => setStartYear(Number(e.target.value))}
-                  className="border border-gray-300 rounded px-2 py-1 bg-white w-full"
-                >
-                  {Array.from({ length: 10 }).map((_, i) => {
-                    const year = currentYear - 5 + i;
-                    return <option key={year} value={year}>{year}</option>;
-                  })}
-                </select>
-              </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-sm font-medium">Start Quarter:</label>
-                <select
-                  value={startQuarter}
-                  onChange={e => setStartQuarter(e.target.value as Quarter)}
-                  className="border border-gray-300 rounded px-2 py-1 bg-white w-full"
-                >
-                  <option value="Q1">Q1</option>
-                  <option value="Q2">Q2</option>
-                  <option value="Q3">Q3</option>
-                  <option value="Q4">Q4</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="hidden sm:block w-px bg-blue-200 mx-0" />
-          <div className="flex-1 min-w-0 flex flex-col bg-blue-100 p-2 rounded-b-xl sm:rounded-r-xl sm:rounded-tl-none sm:rounded-bl-none">
-            <div className="flex gap-2 w-full">
-              <div className="flex-1 min-w-0">
-                <label className="text-sm font-medium">End Year:</label>
-                <select
-                  value={endYear}
-                  onChange={e => setEndYear(Number(e.target.value))}
-                  className="border border-gray-300 rounded px-2 py-1 bg-white w-full"
-                >
-                  {Array.from({ length: 10 }).map((_, i) => {
-                    const year = currentYear - 5 + i;
-                    return <option key={year} value={year}>{year}</option>;
-                  })}
-                </select>
-              </div>
-              <div className="flex-1 min-w-0">
-                <label className="text-sm font-medium">End Quarter:</label>
-                <select
-                  value={endQuarter}
-                  onChange={e => setEndQuarter(e.target.value as Quarter)}
-                  className="border border-gray-300 rounded px-2 py-1 bg-white w-full"
-                >
-                  <option value="Q1">Q1</option>
-                  <option value="Q2">Q2</option>
-                  <option value="Q3">Q3</option>
-                  <option value="Q4">Q4</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
+
+      <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
+        <table className="min-w-full text-sm">
           <thead>
-            <tr>
-              <th className="text-left p-2 border-b w-32">
-                <div className="flex items-center justify-between">
+            <tr className="bg-gray-50">
+              <th className="p-2 text-left font-semibold border-b">
+                <div className="flex items-center">
                   <span>Level</span>
-                  {grouping === 'level' && (
-                    <button
-                      className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
-                      aria-label={
-                        levels.every(level => expandedLevels[level] !== false)
-                          ? 'Collapse all levels'
-                          : 'Expand all levels'
-                      }
-                      onClick={() => {
-                        const allExpanded = levels.every(level => expandedLevels[level] !== false);
-                        setExpandedLevels(prev => {
-                          const next = { ...prev };
-                          levels.forEach(level => {
-                            next[level] = !allExpanded; // collapse all if all expanded, else expand all
-                          });
-                          return next;
-                        });
-                      }}
-                    >
-                      {levels.every(level => expandedLevels[level] !== false) ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </button>
-                  )}
                   {grouping === 'hierarchy' && (
                     <button
                       className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
                       aria-label={
                         Object.values(expandedObjectives).some(v => v === false)
-                          ? 'Expand all'
-                          : 'Collapse all'
+                          ? 'Expand all objectives'
+                          : 'Collapse all objectives'
                       }
-                      onClick={() => {
-                        // Get all visible objectives in the current tree
-                        const tree = buildObjectiveTree(getHierarchyFilteredObjectives(filteredObjectives, search));
-                        // Collect all ids recursively
-                        function collectIds(nodes: (Objective & { children?: Objective[] })[]): string[] {
-                          return nodes.flatMap(node => [node.id, ...(node.children ? collectIds(node.children) : [])]);
-                        }
-                        const allIds = collectIds(tree);
-                        const anyCollapsed = allIds.some(id => expandedObjectives[id] === false);
-                        setExpandedObjectives(prev => {
-                          const next: { [id: string]: boolean } = { ...prev };
-                          allIds.forEach(id => {
-                            next[id] = anyCollapsed; // expand if any are collapsed, else collapse all
-                          });
-                          return next;
-                        });
+                      tabIndex={0}
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleExpandCollapseAll();
                       }}
                     >
                       {Object.values(expandedObjectives).some(v => v === false) ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
                         <ChevronRight className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
                       )}
                     </button>
                   )}
                 </div>
               </th>
-              <th className="text-left p-2 border-b w-48">Objective</th>
-              {quarters.map((q, idx) => (
-                <th
-                  key={q.year + q.quarter}
-                  className={`text-center p-2 border-b min-w-[60px]${idx !== 0 ? ' border-l border-gray-200' : ''}`}
-                >
+              <th className="p-2 text-left font-semibold border-b">Objective</th>
+              <th className="p-2 text-left font-semibold border-b">Status</th>
+              {quarters.map(q => (
+                <th key={q.year + q.quarter} className="p-2 text-center font-semibold border-b border-l border-gray-100">
                   {q.quarter} {q.year}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {grouping === 'level'
-              ? levels.map(level => {
-                  // Only show objectives matching the search
-                  const levelObjs = filteredObjectives.filter(obj => obj.level === level && (!search || obj.title.toLowerCase().includes(search.toLowerCase())));
-                  if (levelObjs.length === 0) return null;
-                  const isExpanded = expandedLevels[level] !== false;
-                  return [
-                    // Panel header row
-                    <tr key={level + '-header'} className={
-                      level === 'company' ? 'bg-blue-50' :
-                      level === 'team' ? 'bg-green-50' :
-                      'bg-purple-50'
-                    }>
-                      <td colSpan={2 + quarters.length} className="p-2 border-b align-middle">
-                        <div className="flex items-center">
-                          <button
-                            className="mr-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
-                            aria-label={isExpanded ? `Collapse ${level} objectives` : `Expand ${level} objectives`}
-                            onClick={e => {
-                              e.stopPropagation();
-                              setExpandedLevels(prev => ({ ...prev, [level]: !isExpanded }));
-                            }}
-                          >
-                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                          </button>
-                          <span className={`inline-flex items-center justify-center mr-2 align-middle ${levelIcons[level].color}`}>{levelIcons[level].icon}</span>
-                          <span className="font-semibold text-lg capitalize">{level} Objectives</span>
-                          <span className="ml-2 text-xs text-gray-500">({levelObjs.length})</span>
-                        </div>
-                      </td>
-                    </tr>,
-                    // Objective rows
-                    isExpanded ? buildObjectiveTree(levelObjs).flatMap(obj => renderObjectiveRow(obj, level, 0)) : null
-                  ];
-                })
-              : buildObjectiveTree(getHierarchyFilteredObjectives(filteredObjectives, search)).flatMap(obj => renderObjectiveRow(obj, obj.level, 0))}
+            {grouping === 'level' ? (
+              levels.map(level => {
+                const levelObjectives = objectivesByLevel[level];
+                if (levelObjectives.length === 0) return null;
+                
+                const isLevelExpanded = expandedLevels[level] !== false;
+                
+                return [
+                  <tr key={`level-${level}`} className="bg-gray-100">
+                    <td colSpan={3 + quarters.length} className="p-2">
+                      <div className="flex items-center">
+                        <button
+                          className="mr-2 focus:outline-none"
+                          onClick={() => setExpandedLevels(prev => ({ ...prev, [level]: !isLevelExpanded }))}
+                        >
+                          {isLevelExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        </button>
+                        <span className={`inline-flex items-center justify-center mr-2 ${levelIcons[level].color}`}>
+                          {levelIcons[level].icon}
+                        </span>
+                        <span className="font-semibold capitalize">{level} Objectives</span>
+                      </div>
+                    </td>
+                  </tr>,
+                  isLevelExpanded && levelObjectives.map(obj => renderObjectiveRow({ ...obj, children: [] }, level))
+                ];
+              }).flat()
+            ) : (
+              objectiveTree.flatMap(obj => renderObjectiveRow(obj, obj.level))
+            )}
           </tbody>
         </table>
       </div>
-      {/* Objective Detail Modal */}
+
       {detailObjective && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => {
-            if (window.isEditing) {
-              if (!window.confirm('You have unsaved changes. Closing will discard them. Continue?')) {
-                return;
-              }
-            }
-            setDetailObjective(null);
-          }}
+          onClick={() => setDetailObjective(null)}
         >
           <div onClick={e => e.stopPropagation()}>
-            <ObjectiveDetail
-              objective={detailObjective.objective}
-              onClose={() => setDetailObjective(null)}
-            />
+            <ObjectiveDetail objective={detailObjective.objective} onClose={() => setDetailObjective(null)} />
           </div>
         </div>
       )}

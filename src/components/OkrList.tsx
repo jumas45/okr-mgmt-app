@@ -3,6 +3,7 @@ import { useOKRData } from '../hooks/useOKRData';
 import { User, Users2, Building2, ArrowUp, ArrowDown, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Objective } from '../types';
 import ObjectiveDetail from './ObjectiveDetail';
+import { getStatusColor } from '../utils/calculations';
 
 const levelIcons: Record<string, React.ReactNode> = {
   company: <Building2 className="w-4 h-4 text-blue-600" />,
@@ -24,6 +25,7 @@ function getSortValue(obj: Objective, key: string) {
     case 'owner': return obj.owner.toLowerCase();
     case 'title': return obj.title.toLowerCase();
     case 'level': return obj.level;
+    case 'status': return obj.status;
     case 'timeline': return `${obj.startYear}${obj.startQuarter}`;
     case 'due': return `${obj.endYear}${obj.endQuarter}`;
     case 'tags': return (obj.tags && obj.tags.length > 0 ? obj.tags.join(',').toLowerCase() : '');
@@ -100,102 +102,120 @@ export default function OkrList() {
     return 0;
   });
 
-  // Render tree recursively
   function renderObjectiveRow(obj: Objective & { children?: Objective[] }, depth = 0): React.ReactNode[] {
     const hasChildren = obj.children && obj.children.length > 0;
     const isExpanded = expanded[obj.id] !== false;
-    return [
+    const levelIcon = levelIcons[obj.level];
+    const statusColor = getStatusColor(obj.status);
+    const statusText = obj.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+    const rows: React.ReactNode[] = [
       <tr
         key={obj.id}
-        className={
-          `border-b transition ` +
-          (obj.level === 'company' ? 'bg-blue-50 hover:bg-blue-100' :
-           obj.level === 'team' ? 'bg-green-50 hover:bg-green-100' :
-           'bg-purple-50 hover:bg-purple-100')
-        }
-        onClick={e => {
-          if (!(e.target as HTMLElement).closest('button')) {
-            setDetailObjective(obj);
-          }
-        }}
-        style={{ cursor: 'pointer' }}
+        className={`hover:bg-gray-50 cursor-pointer ${
+          obj.level === 'company' ? 'bg-blue-50' :
+          obj.level === 'team' ? 'bg-green-50' :
+          'bg-purple-50'
+        }`}
+        onClick={() => setDetailObjective(obj)}
       >
-        <td className="p-3 flex items-center gap-2" style={{ paddingLeft: 16 + depth * 24 }}>
-          {hasChildren && (
-            <button
-              className="focus:outline-none mr-1"
-              aria-label={isExpanded ? 'Collapse children' : 'Expand children'}
-              tabIndex={0}
-              onClick={e => {
-                e.stopPropagation();
-                setExpanded(prev => ({ ...prev, [obj.id]: !isExpanded }));
-              }}
-            >
-              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </button>
-          )}
-          {levelIcons[obj.level]}
-          <span className="font-medium text-blue-900">{obj.title}</span>
+        <td className="p-3 border-b">
+          <div className="flex items-center" style={{ marginLeft: depth * 24 }}>
+            {hasChildren && (
+              <button
+                className="mr-2 focus:outline-none"
+                onClick={e => {
+                  e.stopPropagation();
+                  setExpanded(prev => ({ ...prev, [obj.id]: !isExpanded }));
+                }}
+              >
+                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+            )}
+            <span className="inline-flex items-center mr-2">{levelIcon}</span>
+            <span className="font-medium">{obj.title}</span>
+          </div>
         </td>
-        <td className="p-3">{obj.owner}</td>
-        <td className="p-3">{obj.level.charAt(0).toUpperCase() + obj.level.slice(1)}</td>
-        <td className="p-3">
-          <div className="flex items-center gap-2">
+        <td className="p-3 border-b text-gray-700">{obj.owner}</td>
+        <td className="p-3 border-b">
+          <div className="flex items-center">
+            <span className="inline-flex items-center mr-2">{levelIcon}</span>
+            <span className="capitalize">{obj.level}</span>
+          </div>
+        </td>
+        <td className="p-3 border-b">
+          <div className="flex items-center space-x-2">
             <ProgressBar value={obj.progress} />
-            <span className={
-              'font-semibold ' +
-              (obj.progress === 0 ? 'text-gray-400' :
-               obj.progress >= 70 ? 'text-green-600' :
-               obj.progress >= 40 ? 'text-amber-600' :
-               'text-red-600')
-            }>
+            <span className={`text-sm font-medium ${
+              obj.progress === 100 ? 'text-green-600' :
+              obj.progress >= 70 ? 'text-blue-600' :
+              obj.progress >= 40 ? 'text-amber-600' :
+              'text-red-600'
+            }`}>
               {obj.progress}%
             </span>
           </div>
         </td>
-        <td className="p-3">
+        <td className="p-3 border-b">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+            {statusText}
+          </span>
+        </td>
+        <td className="p-3 border-b">
           {obj.tags && obj.tags.length > 0 ? (
-            <span className="flex flex-wrap gap-1">
-              {obj.tags.map(tag => (
-                <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">
+            <div className="flex flex-wrap gap-1">
+              {obj.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                >
                   {tag}
                 </span>
               ))}
-            </span>
-          ) : '-'}
+            </div>
+          ) : (
+            <span className="text-gray-400 text-sm">-</span>
+          )}
         </td>
-        <td className="p-3">
+        <td className="p-3 border-b text-gray-600">
           {obj.startQuarter} {obj.startYear} - {obj.endQuarter} {obj.endYear}
         </td>
-        <td className="p-3">{obj.endQuarter} {obj.endYear}</td>
-      </tr>,
-      isExpanded && hasChildren
-        ? obj.children!.flatMap(child => renderObjectiveRow(child, depth + 1))
-        : null
+        <td className="p-3 border-b text-gray-600">
+          {obj.endQuarter} {obj.endYear}
+        </td>
+      </tr>
     ];
+
+    if (isExpanded && hasChildren) {
+      obj.children!.forEach(child => {
+        rows.push(...renderObjectiveRow(child, depth + 1));
+      });
+    }
+
+    return rows;
   }
 
-  // For expand/collapse all
   function handleExpandCollapseAll() {
-    const tree = buildObjectiveTree(sorted);
-    // Collect all ids recursively
-    function collectIds(nodes: (Objective & { children?: Objective[] })[]): string[] {
-      return nodes.flatMap(node => [node.id, ...(node.children ? collectIds(node.children) : [])]);
-    }
-    const allIds = collectIds(tree);
-    const anyCollapsed = allIds.some(id => expanded[id] === false);
-    setExpanded(prev => {
-      const next: Record<string, boolean> = { ...prev };
-      allIds.forEach(id => {
-        next[id] = anyCollapsed;
+    const allIds = new Set<string>();
+    function collectIds(nodes: (Objective & { children?: Objective[] })[]) {
+      nodes.forEach(node => {
+        allIds.add(node.id);
+        if (node.children) collectIds(node.children);
       });
-      return next;
+    }
+    collectIds(buildObjectiveTree(sorted));
+
+    const allExpanded = Object.values(expanded).every(v => v === true);
+    const newExpanded: Record<string, boolean> = {};
+    allIds.forEach(id => {
+      newExpanded[id] = !allExpanded;
     });
+    setExpanded(newExpanded);
   }
 
   function handleSort(key: string) {
     if (sortKey === key) {
-      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     } else {
       setSortKey(key);
       setSortDir('asc');
@@ -285,6 +305,18 @@ export default function OkrList() {
                 <span className="inline-flex items-center">
                   Progress
                   {sortKey === 'progress' && (
+                    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+                  )}
+                </span>
+              </th>
+              <th
+                key="status"
+                className="p-3 text-left font-semibold cursor-pointer select-none"
+                onClick={() => handleSort('status')}
+              >
+                <span className="inline-flex items-center">
+                  Status
+                  {sortKey === 'status' && (
                     sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
                   )}
                 </span>
