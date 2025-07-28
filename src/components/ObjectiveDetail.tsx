@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Edit, Save, Trash2, Building2, Users2, User } from 'lucide-react';
+import { X, Edit, Save, Trash2, Building2, Users2, User, Pause, XCircle } from 'lucide-react';
 import { Objective, Quarter, KeyResult } from '../types';
 import { useOKRData } from '../hooks/useOKRData';
-import { getStatusColor, calculateObjectiveStatus } from '../utils/calculations';
+import { getStatusColor } from '../utils/calculations';
 import CreateKeyResultModal from './CreateKeyResultModal';
 import StatusManagementModal from './StatusManagementModal';
 import toast from 'react-hot-toast';
@@ -35,6 +35,8 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
   const [dupYear, setDupYear] = useState<number>(settings.currentYear);
   const [editTags, setEditTags] = useState<string[]>(objective.tags || []);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showOnHoldModal, setShowOnHoldModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const [showCheckIn, setShowCheckIn] = useState<KeyResult | null>(null);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
@@ -78,11 +80,6 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
     if (y1 === y2) return ['Q1','Q2','Q3','Q4'].indexOf(q1) >= ['Q1','Q2','Q3','Q4'].indexOf(q2);
     return false;
   }
-  function isBeforeOrEqual(y1: number, q1: Quarter, y2: number, q2: Quarter) {
-    if (y1 < y2) return true;
-    if (y1 === y2) return ['Q1','Q2','Q3','Q4'].indexOf(q1) <= ['Q1','Q2','Q3','Q4'].indexOf(q2);
-    return false;
-  }
 
   // Update edit data when objective changes
   React.useEffect(() => {
@@ -98,47 +95,33 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
     });
     setEditTags(currentObjective.tags || []);
   }, [currentObjective.title, currentObjective.description, currentObjective.owner, currentObjective.parentId, currentObjective.startQuarter, currentObjective.startYear, currentObjective.endQuarter, currentObjective.endYear, currentObjective.tags]);
-  
-  const status = calculateObjectiveStatus(currentObjective.progress);
-  const statusColor = getStatusColor(status);
 
   const handleSave = () => {
-    // Required field validation
-    if (!editData.title.trim() || !editData.owner.trim() || !editData.startQuarter || !editData.startYear || !editData.endQuarter || !editData.endYear) {
-      toast.error('Please fill in all required fields.');
+    if (!editData.title.trim()) {
+      toast.error('Title is required');
       return;
     }
-    // Validation: End must not be before start
-    if (
-      editData.endYear < editData.startYear ||
-      (editData.endYear === editData.startYear && ['Q1','Q2','Q3','Q4'].indexOf(editData.endQuarter) < ['Q1','Q2','Q3','Q4'].indexOf(editData.startQuarter))
-    ) {
-      toast.error('End quarter/year must not be before start quarter/year.');
+    if (!editData.owner.trim()) {
+      toast.error('Owner is required');
       return;
     }
-    // Validation: Children must not extend beyond this objective's end
-    const childObjs = objectives.filter(obj => obj.parentId === currentObjective.id);
-    for (const child of childObjs) {
-      if (
-        child.endYear > editData.endYear ||
-        (child.endYear === editData.endYear && ['Q1','Q2','Q3','Q4'].indexOf(child.endQuarter) > ['Q1','Q2','Q3','Q4'].indexOf(editData.endQuarter))
-      ) {
-        toast.error(`Child objective "${child.title}" extends beyond this objective's end. Please adjust the child first.`);
-        return;
-      }
+    if (!editData.startQuarter || !editData.endQuarter) {
+      toast.error('Start and end quarters are required');
+      return;
     }
-    // Validation: Cannot go outside parent range
-    if (parentObjective) {
-      if (!isAfterOrEqual(editData.startYear, editData.startQuarter, parentObjective.startYear, parentObjective.startQuarter) ||
-          !isBeforeOrEqual(editData.endYear, editData.endQuarter, parentObjective.endYear, parentObjective.endQuarter)) {
-        toast.error("Start/End must be within the parent objective's timeline.");
-        return;
-      }
+    if (!editData.startYear || !editData.endYear) {
+      toast.error('Start and end years are required');
+      return;
     }
-    updateObjective(objective.id, {
-      title: editData.title,
-      description: editData.description,
-      owner: editData.owner,
+    if (!isAfterOrEqual(editData.endYear, editData.endQuarter, editData.startYear, editData.startQuarter)) {
+      toast.error('End date must be after start date');
+      return;
+    }
+    updateObjective(currentObjective.id, {
+      ...currentObjective,
+      title: editData.title.trim(),
+      description: editData.description.trim(),
+      owner: editData.owner.trim(),
       parentId: editData.parentId || undefined,
       startQuarter: editData.startQuarter,
       startYear: editData.startYear,
@@ -147,30 +130,25 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
       tags: editTags,
     });
     setIsEditing(false);
+    toast.success('Objective updated successfully!');
   };
 
   const handleDuplicate = () => {
     duplicateObjective(currentObjective.id, dupQuarter, dupYear);
     setShowDuplicateModal(false);
-    toast.success('Objective duplicated!');
+    toast.success('Objective duplicated successfully!');
   };
 
-  // Helper: get all descendants (recursive)
   function getDescendantsWithLevels(objId: string, allObjs: Objective[]): Objective[] {
     const descendants: Objective[] = [];
     function findChildren(id: string) {
-      allObjs.filter(o => o.parentId === id).forEach(child => {
-        descendants.push(child);
-        findChildren(child.id);
-      });
+      const children = allObjs.filter(obj => obj.parentId === id);
+      descendants.push(...children);
+      children.forEach(child => findChildren(child.id));
     }
     findChildren(objId);
     return descendants;
   }
-  const allDescendants = getDescendantsWithLevels(currentObjective.id, objectives);
-  const companyCount = allDescendants.filter(o => o.level === 'company').length;
-  const teamCount = allDescendants.filter(o => o.level === 'team').length;
-  const individualCount = allDescendants.filter(o => o.level === 'individual').length;
 
   function handleDeleteWithChildren() {
     // Delete all descendants first, then the objective itself
@@ -178,6 +156,27 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
     deleteObjective(currentObjective.id);
     setShowDeleteModal(false);
     onClose();
+  }
+
+  // Status change handlers
+  function handleOnHoldWithChildren() {
+    // Set all descendants to on-hold first, then the objective itself
+    allDescendants.forEach(desc => {
+      updateObjective(desc.id, { ...desc, status: 'on-hold' });
+    });
+    updateObjective(currentObjective.id, { ...currentObjective, status: 'on-hold' });
+    setShowOnHoldModal(false);
+    toast.success('Objective and children set to On Hold!');
+  }
+
+  function handleCancelWithChildren() {
+    // Set all descendants to cancelled first, then the objective itself
+    allDescendants.forEach(desc => {
+      updateObjective(desc.id, { ...desc, status: 'cancelled' });
+    });
+    updateObjective(currentObjective.id, { ...currentObjective, status: 'cancelled' });
+    setShowCancelModal(false);
+    toast.success('Objective and children cancelled!');
   }
 
   const handleRequestClose = () => {
@@ -193,6 +192,16 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
     team: { icon: <Users2 className="w-7 h-7" />, color: 'text-green-600' },
     individual: { icon: <User className="w-7 h-7" />, color: 'text-purple-600' },
   };
+
+  // Calculate descendants for status change modals
+  const allDescendants = getDescendantsWithLevels(currentObjective.id, objectives);
+  const companyCount = allDescendants.filter(o => o.level === 'company').length;
+  const teamCount = allDescendants.filter(o => o.level === 'team').length;
+  const individualCount = allDescendants.filter(o => o.level === 'individual').length;
+
+  // Status color and text
+  const statusColor = getStatusColor(currentObjective.status);
+  const status = currentObjective.status;
 
   return (
     <>
@@ -257,6 +266,27 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
                 <span>Save</span>
               </button>
             )}
+            {/* Status change buttons in edit mode */}
+            {isEditing && currentObjective.status !== 'on-hold' && currentObjective.status !== 'cancelled' && (
+              <>
+                <button
+                  onClick={() => setShowOnHoldModal(true)}
+                  className="flex items-center space-x-1 bg-orange-600 text-white hover:bg-orange-700 focus:ring-2 focus:ring-orange-400 rounded px-3 py-1 text-sm transition ml-2"
+                  title="Put On Hold"
+                >
+                  <Pause className="w-4 h-4" />
+                  <span>On Hold</span>
+                </button>
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="flex items-center space-x-1 bg-red-600 text-white hover:bg-red-700 focus:ring-2 focus:ring-red-400 rounded px-3 py-1 text-sm transition ml-2"
+                  title="Cancel Objective"
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span>Cancel</span>
+                </button>
+              </>
+            )}
             {/* Delete button */}
             {!isEditing && (
               <button
@@ -272,14 +302,12 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
             <button
               onClick={() => {
                 if (window.isEditing) {
-                  if (!window.confirm('You have unsaved changes. Closing will discard them. Continue?')) {
-                    return;
-                  }
+                  setShowUnsavedModal(true);
+                } else {
+                  onClose();
                 }
-                onClose();
               }}
-              className="text-gray-400 hover:text-gray-600 p-1"
-              aria-label="Close"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -628,6 +656,48 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
             <div className="flex justify-end gap-2">
               <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={() => setShowDeleteModal(false)}>Cancel</button>
               <button className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700" onClick={handleDeleteWithChildren}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* On Hold Confirmation Modal */}
+      {showOnHoldModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" onClick={() => setShowOnHoldModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-6 relative transform transition-all duration-300 scale-100 opacity-100 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4 text-orange-600 flex items-center"><Pause className="w-5 h-5 mr-2" /> Put On Hold</h3>
+            <p className="mb-4 text-gray-700">Are you sure you want to put this objective and its children on hold?</p>
+            <div className="mb-4 text-sm text-gray-600">
+              This will also put on hold:
+              <ul className="list-disc ml-6 mt-1">
+                <li><span className="font-bold">{companyCount}</span> Company</li>
+                <li><span className="font-bold">{teamCount}</span> Team</li>
+                <li><span className="font-bold">{individualCount}</span> Individual</li>
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={() => setShowOnHoldModal(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700" onClick={handleOnHoldWithChildren}>On Hold</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" onClick={() => setShowCancelModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-6 relative transform transition-all duration-300 scale-100 opacity-100 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4 text-red-600 flex items-center"><XCircle className="w-5 h-5 mr-2" /> Cancel Objective</h3>
+            <p className="mb-4 text-gray-700">Are you sure you want to cancel this objective and its children?</p>
+            <div className="mb-4 text-sm text-gray-600">
+              This will also cancel:
+              <ul className="list-disc ml-6 mt-1">
+                <li><span className="font-bold">{companyCount}</span> Company</li>
+                <li><span className="font-bold">{teamCount}</span> Team</li>
+                <li><span className="font-bold">{individualCount}</span> Individual</li>
+              </ul>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={() => setShowCancelModal(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700" onClick={handleCancelWithChildren}>Cancel</button>
             </div>
           </div>
         </div>
