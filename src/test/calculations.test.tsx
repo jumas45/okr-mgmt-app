@@ -42,7 +42,9 @@ describe('calculations', () => {
     });
 
     it('should return default color for unknown status', () => {
-      expect(getStatusColor('unknown' as any)).toBe('text-gray-600 bg-gray-100');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = getStatusColor('unknown-status' as any);
+      expect(result).toBe('bg-gray-100 text-gray-800');
     });
   });
 

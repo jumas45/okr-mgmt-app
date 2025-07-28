@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, AlertTriangle, CheckCircle, Pause, XCircle, Play, RotateCcw } from 'lucide-react';
+import { X, AlertTriangle, Pause, XCircle, Play, RotateCcw } from 'lucide-react';
 import { Objective, OKRStatus } from '../types';
 import { useOKRData } from '../hooks/useOKRData';
 import toast from 'react-hot-toast';

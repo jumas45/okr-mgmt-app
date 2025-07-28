@@ -194,7 +194,9 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
   };
 
   // Calculate descendants for status change modals
-  const allDescendants = getDescendantsWithLevels(currentObjective.id, objectives);
+  const allDescendants = React.useMemo(() => {
+    return getDescendantsWithLevels(currentObjective.id, objectives);
+  }, [currentObjective.id, objectives]);
   const companyCount = allDescendants.filter(o => o.level === 'company').length;
   const teamCount = allDescendants.filter(o => o.level === 'team').length;
   const individualCount = allDescendants.filter(o => o.level === 'individual').length;

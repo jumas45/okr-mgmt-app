@@ -10,14 +10,22 @@ export function calculateObjectiveStatus(progress: number): OKRStatus {
 
 export function getStatusColor(status: OKRStatus): string {
   switch (status) {
-    case 'completed': return 'text-green-600 bg-green-100';
-    case 'on-track': return 'text-blue-600 bg-blue-100';
-    case 'at-risk': return 'text-amber-600 bg-amber-100';
-    case 'behind': return 'text-red-600 bg-red-100';
-    case 'not-started': return 'text-gray-600 bg-gray-100';
-    case 'on-hold': return 'text-orange-600 bg-orange-100';
-    case 'cancelled': return 'text-red-600 bg-red-100';
-    default: return 'text-gray-600 bg-gray-100';
+    case 'not-started':
+      return 'bg-gray-100 text-gray-800';
+    case 'on-track':
+      return 'bg-green-100 text-green-800';
+    case 'at-risk':
+      return 'bg-amber-100 text-amber-800';
+    case 'behind':
+      return 'bg-red-100 text-red-800';
+    case 'completed':
+      return 'bg-blue-100 text-blue-800';
+    case 'on-hold':
+      return 'bg-orange-100 text-orange-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
 }
 
@@ -39,7 +47,7 @@ export function importOKRData(jsonData: string): Objective[] {
   try {
     const data = JSON.parse(jsonData);
     return data.objectives || [];
-  } catch (error) {
+  } catch {
     throw new Error('Invalid JSON format');
   }
 }

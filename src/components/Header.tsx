@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Archive, BarChart3, TreePine, CalendarRange, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
+import { Dashboard, Analytics, Archive, Settings, List } from 'lucide-react';
 import OkrLogo from '../assets/okr-logo.png';
 import { useOKRData } from '../hooks/useOKRData';
 
@@ -22,10 +22,10 @@ declare global {
 
 export default function Header({ currentView, onViewChange, currentQuarter, currentYear, onQuarterYearChange, darkMode, setDarkMode }: HeaderProps) {
   const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Target },
-    { id: 'gantt', label: 'Timeline', icon: CalendarRange },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'okr-list', label: 'OKR List', icon: BarChart3 }, // Move this to the end, remove Hierarchy
+    { id: 'dashboard', label: 'Dashboard', icon: Dashboard },
+    { id: 'gantt', label: 'Timeline', icon: List },
+    { id: 'analytics', label: 'Analytics', icon: Analytics },
+    { id: 'okr-list', label: 'OKR List', icon: List }, // Move this to the end, remove Hierarchy
   ];
 
   const [showSettingsMenu, setShowSettingsMenu] = React.useState(false);
@@ -156,7 +156,7 @@ export default function Header({ currentView, onViewChange, currentQuarter, curr
                     onClick={() => { setShowSettingsMenu(false); onViewChange('settings'); }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   >
-                    <SettingsIcon className="w-4 h-4" aria-hidden="true" /> Settings
+                    <Settings className="w-4 h-4" aria-hidden="true" /> Settings
                   </button>
                   <button
                     onClick={() => { setShowSettingsMenu(false); onViewChange('archive'); }}

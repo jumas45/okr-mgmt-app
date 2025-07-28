@@ -95,7 +95,15 @@ function migrateStatusData(db: any) {
 
 // This hook provides a similar API to useLocalStorage, but uses a persistent SQLite DB (via sql.js + IndexedDB)
 export function useSQLiteStorage<T>(key: string, initialValue: T) {
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.error(`Error reading localStorage key "${key}":`, error);
+      return initialValue;
+    }
+  });
   // sql.js types are not included by default, so we use 'any' here. TODO: Add proper types if needed.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [db, setDb] = useState<any>(null);

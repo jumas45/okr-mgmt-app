@@ -65,7 +65,9 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
   );
   
   const status = calculateObjectiveStatus(objective.progress);
-  const statusColor = getStatusColor(status);
+  const statusColor = React.useMemo(() => {
+    return getStatusColor(status);
+  }, [status]);
   const progressColor = getProgressBarColor(objective.progress);
 
   const handleDelete = () => {

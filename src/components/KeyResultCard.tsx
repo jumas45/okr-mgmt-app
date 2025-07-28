@@ -38,7 +38,9 @@ export default function KeyResultCard({ keyResult, objectiveId, onUpdate, onDele
     });
   }, [currentKeyResult.title, currentKeyResult.currentValue]);
 
-  const progressColor = getProgressBarColor(currentKeyResult.progress);
+  const progressColor = React.useMemo(() => {
+    return getProgressBarColor(currentKeyResult.progress);
+  }, [currentKeyResult.progress]);
   
   const formatValue = (value: number) => {
     if (currentKeyResult.type === 'boolean') {
