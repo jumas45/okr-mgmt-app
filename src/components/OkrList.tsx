@@ -157,7 +157,7 @@ export default function OkrList() {
           </div>
         </td>
         <td className="p-3 border-b">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
             {statusText}
           </span>
         </td>

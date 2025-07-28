@@ -135,7 +135,7 @@ export default function StatusManagementModal({ objective, onClose }: StatusMana
         <div className="mb-4">
           <p className="text-sm text-gray-600 mb-2">Current Status:</p>
           <div className="flex items-center space-x-2">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(objective.status)}`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${getStatusColor(objective.status)}`}>
               {objective.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </span>
           </div>

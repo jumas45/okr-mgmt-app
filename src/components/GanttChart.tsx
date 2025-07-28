@@ -234,7 +234,7 @@ export default function GanttChart() {
           </div>
         </td>
         <td className="p-2 border-b align-top">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
             {statusText}
           </span>
         </td>

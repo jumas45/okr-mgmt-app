@@ -231,7 +231,7 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
                 <span className={`inline-flex items-center justify-center mr-3 align-middle ${levelIcons[currentObjective.level]?.color || ''}`} title={currentObjective.level.charAt(0).toUpperCase() + currentObjective.level.slice(1)}>
                   {levelIcons[currentObjective.level]?.icon}
                 </span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
                   {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </span>
                 {/* Status Management button */}

@@ -158,7 +158,7 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
             <span className={`inline-flex items-center justify-center mr-2 align-middle ${levelIcons[currentObjective.level]?.color || ''}`} title={currentObjective.level.charAt(0).toUpperCase() + currentObjective.level.slice(1)}>
               {levelIcons[currentObjective.level]?.icon}
             </span>
-            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColor} border border-opacity-30 border-current`}>{status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor} border border-opacity-30 border-current`}>{status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
           </div>
           <div className="relative">
             <button

@@ -90,7 +90,7 @@ export default function Archive() {
                       <span className="text-xs font-medium">
                         {objective.level.charAt(0).toUpperCase() + objective.level.slice(1)}
                       </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
                         {objective.status.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       </span>
                       <span className="text-xs text-gray-500">
