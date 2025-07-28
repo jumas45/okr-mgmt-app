@@ -17,13 +17,26 @@ const levelIcons: Record<OKRLevel, { icon: React.ReactNode; color: string }> = {
   individual: { icon: <User className="w-4 h-4" />, color: 'text-purple-600' },
 };
 
-function getQuartersBetween(startYear: number, endYear: number) {
+function getQuartersBetween(startYear: number, endYear: number, startQuarter?: Quarter, endQuarter?: Quarter) {
   const quarters = [];
+  const allQuarters: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+  
   for (let year = startYear; year <= endYear; year++) {
-    for (const q of ['Q1', 'Q2', 'Q3', 'Q4'] as const) {
-      quarters.push({ year, quarter: q });
+    const yearQuarters = allQuarters.map(q => ({ year, quarter: q }));
+    
+    if (year === startYear && startQuarter) {
+      const startIndex = allQuarters.indexOf(startQuarter);
+      yearQuarters.splice(0, startIndex);
     }
+    
+    if (year === endYear && endQuarter) {
+      const endIndex = allQuarters.indexOf(endQuarter);
+      yearQuarters.splice(endIndex + 1);
+    }
+    
+    quarters.push(...yearQuarters);
   }
+  
   return quarters;
 }
 
@@ -84,6 +97,12 @@ export default function GanttChart() {
   const [expandedObjectives, setExpandedObjectives] = useState<{ [id: string]: boolean }>({});
   const [search, setSearch] = useState('');
   const [expandedLevels, setExpandedLevels] = useState<{ [level in OKRLevel]?: boolean }>({ company: true, team: true, individual: true });
+  
+  // Quarter/Year selection state
+  const [startYear, setStartYear] = useState(currentYear - 1);
+  const [endYear, setEndYear] = useState(currentYear + 1);
+  const [startQuarter, setStartQuarter] = useState<Quarter>('Q1');
+  const [endQuarter, setEndQuarter] = useState<Quarter>('Q4');
 
   // Collapsible panels state, persisted per workspace and period
   const collapseKey = `okr-gantt-collapse-${currentWorkspace}-${currentYear}-Q1-${currentYear}-Q4`;
@@ -239,7 +258,7 @@ export default function GanttChart() {
     ];
   }
 
-  const quarters = getQuartersBetween(currentYear - 1, currentYear + 1);
+  const quarters = getQuartersBetween(startYear, endYear, startQuarter, endQuarter);
   const filteredObjectives = getHierarchyFilteredObjectives(objectives, search);
 
   // Group objectives by level for level grouping
@@ -295,6 +314,48 @@ export default function GanttChart() {
             placeholder="Search objectives..."
             value={search}
             onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        
+        {/* Quarter/Year Selection */}
+        <div className="flex items-center gap-2 ml-4">
+          <span className="font-medium">Period:</span>
+          <select
+            value={startQuarter}
+            onChange={e => setStartQuarter(e.target.value as Quarter)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          >
+            <option value="Q1">Q1</option>
+            <option value="Q2">Q2</option>
+            <option value="Q3">Q3</option>
+            <option value="Q4">Q4</option>
+          </select>
+          <input
+            type="number"
+            value={startYear}
+            onChange={e => setStartYear(parseInt(e.target.value))}
+            className="border border-gray-300 rounded px-2 py-1 text-sm w-16"
+            min={2020}
+            max={2030}
+          />
+          <span className="text-gray-500">to</span>
+          <select
+            value={endQuarter}
+            onChange={e => setEndQuarter(e.target.value as Quarter)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+          >
+            <option value="Q1">Q1</option>
+            <option value="Q2">Q2</option>
+            <option value="Q3">Q3</option>
+            <option value="Q4">Q4</option>
+          </select>
+          <input
+            type="number"
+            value={endYear}
+            onChange={e => setEndYear(parseInt(e.target.value))}
+            className="border border-gray-300 rounded px-2 py-1 text-sm w-16"
+            min={2020}
+            max={2030}
           />
         </div>
       </div>
