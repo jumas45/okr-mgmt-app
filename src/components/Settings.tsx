@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Save, Download, Upload, RotateCcw, Copy } from 'lucide-react';
 import { useOKRData } from '../hooks/useOKRData';
+import { migrateDataStore } from '../hooks/OKRDataContext';
 import { Quarter } from '../types';
 import { exportOKRData, importOKRData } from '../utils/calculations';
 
@@ -166,6 +167,24 @@ export default function Settings() {
     window.location.reload();
   };
 
+  // Storage type setting
+  const [storageType, setStorageType] = useState(() => localStorage.getItem('okr-storage-type') || 'isolated');
+  const handleStorageTypeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = e.target.value;
+    if (newType === storageType) return;
+    setStorageType(newType);
+    localStorage.setItem('okr-storage-type', newType);
+    setMessage('Migrating data, please wait...');
+    if (newType === 'sqlite') {
+      await migrateDataStore('to-sqlite');
+      setMessage('Data migrated to SQLite. Reloading...');
+    } else {
+      await migrateDataStore('to-isolated');
+      setMessage('Data migrated to Isolated Storage. Reloading...');
+    }
+    setTimeout(() => { window.location.reload(); }, 1200);
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -255,209 +274,224 @@ export default function Settings() {
         </div>
       </div>
 
-      <div className="space-y-8">
-        {/* General Settings */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">General Settings</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Quarter
-              </label>
-              <select
-                value={formData.currentQuarter}
-                onChange={(e) => setFormData(prev => ({ ...prev, currentQuarter: e.target.value as Quarter }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="Q1">Q1</option>
-                <option value="Q2">Q2</option>
-                <option value="Q3">Q3</option>
-                <option value="Q4">Q4</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Year
-              </label>
-              <div className="flex gap-2">
+      <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow border border-gray-200 mt-8">
+        <h2 className="text-2xl font-bold mb-6">Settings</h2>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Data Storage Type</label>
+          <select
+            className="border border-gray-300 rounded px-3 py-2 w-full"
+            value={storageType}
+            onChange={handleStorageTypeChange}
+          >
+            <option value="isolated">Isolated Storage (default)</option>
+            <option value="sqlite">SQLite (experimental)</option>
+          </select>
+          <div className="text-xs text-gray-500 mt-1">Default is Isolated Storage. Switch to SQLite for advanced use. (Requires reload)</div>
+        </div>
+        <div className="space-y-8">
+          {/* General Settings */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">General Settings</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Quarter
+                </label>
                 <select
-                  value={formData.currentYear}
-                  onChange={(e) => setFormData(prev => ({ ...prev, currentYear: Number(e.target.value) }))}
+                  value={formData.currentQuarter}
+                  onChange={(e) => setFormData(prev => ({ ...prev, currentQuarter: e.target.value as Quarter }))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
+                  <option value="Q1">Q1</option>
+                  <option value="Q2">Q2</option>
+                  <option value="Q3">Q3</option>
+                  <option value="Q4">Q4</option>
                 </select>
-                <input
-                  type="number"
-                  min={1900}
-                  max={3000}
-                  value={newYear}
-                  onChange={e => setNewYear(e.target.value ? Number(e.target.value) : '')}
-                  placeholder="Add year"
-                  className="border border-gray-300 rounded-lg px-2 py-2 w-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Year
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={formData.currentYear}
+                    onChange={(e) => setFormData(prev => ({ ...prev, currentYear: Number(e.target.value) }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {years.map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min={1900}
+                    max={3000}
+                    value={newYear}
+                    onChange={e => setNewYear(e.target.value ? Number(e.target.value) : '')}
+                    placeholder="Add year"
+                    className="border border-gray-300 rounded-lg px-2 py-2 w-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddYear}
+                    className="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    disabled={newYear === '' || years.includes(Number(newYear))}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="text-lg font-medium text-gray-900 mb-4">Default User</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.defaultUser.name}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      defaultUser: { ...prev.defaultUser, name: e.target.value }
+                    }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.defaultUser.email}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      defaultUser: { ...prev.defaultUser, email: e.target.value }
+                    }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.defaultUser.role}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      defaultUser: { ...prev.defaultUser, role: e.target.value }
+                    }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={handleSave}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <Save className="w-4 h-4" aria-hidden="true" />
+                <span>Save Settings</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Data Management */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Data Management</h3>
+            
+            <div className="space-y-6">
+              {/* Export */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Export Data</h4>
+                <p className="text-gray-600 text-sm mb-3">
+                  Download all your OKR data as a JSON file for backup or sharing.
+                </p>
                 <button
-                  type="button"
-                  onClick={handleAddYear}
-                  className="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                  disabled={newYear === '' || years.includes(Number(newYear))}
+                  onClick={handleExport}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
                 >
-                  Add
+                  <Download className="w-4 h-4" aria-hidden="true" />
+                  <span>Export Data</span>
+                </button>
+              </div>
+
+              {/* Import */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Import Data</h4>
+                <p className="text-gray-600 text-sm mb-3">
+                  Upload a previously exported JSON file to restore your OKR data.
+                </p>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <button
+                    onClick={handleImport}
+                    disabled={!importFile}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <Upload className="w-4 h-4" aria-hidden="true" />
+                    <span>Import</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Reset */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Reset All Data</h4>
+                <p className="text-gray-600 text-sm mb-3">
+                  Clear all OKR data and settings. This action cannot be undone.
+                </p>
+                <button
+                  onClick={handleReset}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                >
+                  <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                  <span>Reset All Data</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h4 className="text-lg font-medium text-gray-900 mb-4">Default User</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.defaultUser.name}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    defaultUser: { ...prev.defaultUser, name: e.target.value }
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+          {/* Statistics */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Statistics</h3>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{objectives.length}</div>
+                <div className="text-sm text-gray-600">Total Objectives</div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.defaultUser.email}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    defaultUser: { ...prev.defaultUser, email: e.target.value }
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {objectives.reduce((sum, obj) => sum + obj.keyResults.length, 0)}
+                </div>
+                <div className="text-sm text-gray-600">Total Key Results</div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <input
-                  type="text"
-                  value={formData.defaultUser.role}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    defaultUser: { ...prev.defaultUser, role: e.target.value }
-                  }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {objectives.filter(obj => obj.archived).length}
+                </div>
+                <div className="text-sm text-gray-600">Archived</div>
               </div>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={handleSave}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <Save className="w-4 h-4" aria-hidden="true" />
-              <span>Save Settings</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Data Management */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Data Management</h3>
-          
-          <div className="space-y-6">
-            {/* Export */}
-            <div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">Export Data</h4>
-              <p className="text-gray-600 text-sm mb-3">
-                Download all your OKR data as a JSON file for backup or sharing.
-              </p>
-              <button
-                onClick={handleExport}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-              >
-                <Download className="w-4 h-4" aria-hidden="true" />
-                <span>Export Data</span>
-              </button>
-            </div>
-
-            {/* Import */}
-            <div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">Import Data</h4>
-              <p className="text-gray-600 text-sm mb-3">
-                Upload a previously exported JSON file to restore your OKR data.
-              </p>
-              <div className="flex items-center space-x-3">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                <button
-                  onClick={handleImport}
-                  disabled={!importFile}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  <Upload className="w-4 h-4" aria-hidden="true" />
-                  <span>Import</span>
-                </button>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-600">
+                  {objectives.filter(obj => obj.progress === 100).length}
+                </div>
+                <div className="text-sm text-gray-600">Completed</div>
               </div>
-            </div>
-
-            {/* Reset */}
-            <div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">Reset All Data</h4>
-              <p className="text-gray-600 text-sm mb-3">
-                Clear all OKR data and settings. This action cannot be undone.
-              </p>
-              <button
-                onClick={handleReset}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
-              >
-                <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                <span>Reset All Data</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Statistics */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Statistics</h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{objectives.length}</div>
-              <div className="text-sm text-gray-600">Total Objectives</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {objectives.reduce((sum, obj) => sum + obj.keyResults.length, 0)}
-              </div>
-              <div className="text-sm text-gray-600">Total Key Results</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {objectives.filter(obj => obj.archived).length}
-              </div>
-              <div className="text-sm text-gray-600">Archived</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-600">
-                {objectives.filter(obj => obj.progress === 100).length}
-              </div>
-              <div className="text-sm text-gray-600">Completed</div>
             </div>
           </div>
         </div>

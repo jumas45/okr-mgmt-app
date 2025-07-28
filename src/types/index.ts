@@ -1,6 +1,6 @@
 export type OKRLevel = 'company' | 'team' | 'individual';
 export type KeyResultType = 'percentage' | 'number' | 'boolean';
-export type OKRStatus = 'not-started' | 'on-track' | 'at-risk' | 'behind' | 'completed';
+export type OKRStatus = 'not-started' | 'on-track' | 'at-risk' | 'behind' | 'completed' | 'on-hold' | 'cancelled';
 export type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 export interface KeyResult {

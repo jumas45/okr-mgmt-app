@@ -15,6 +15,8 @@ export function getStatusColor(status: OKRStatus): string {
     case 'at-risk': return 'text-amber-600 bg-amber-100';
     case 'behind': return 'text-red-600 bg-red-100';
     case 'not-started': return 'text-gray-600 bg-gray-100';
+    case 'on-hold': return 'text-orange-600 bg-orange-100';
+    case 'cancelled': return 'text-red-600 bg-red-100';
     default: return 'text-gray-600 bg-gray-100';
   }
 }

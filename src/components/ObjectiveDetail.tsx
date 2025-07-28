@@ -4,6 +4,7 @@ import { Objective, Quarter, KeyResult } from '../types';
 import { useOKRData } from '../hooks/useOKRData';
 import { getStatusColor, calculateObjectiveStatus } from '../utils/calculations';
 import CreateKeyResultModal from './CreateKeyResultModal';
+import StatusManagementModal from './StatusManagementModal';
 import toast from 'react-hot-toast';
 import CheckInModal from './CheckInModal';
 import SearchableDropdown from './SearchableDropdown';
@@ -38,6 +39,7 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
   const [showCheckIn, setShowCheckIn] = useState<KeyResult | null>(null);
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
+  const [showStatusManagement, setShowStatusManagement] = useState(false);
 
   // Focus trap and Esc-to-close for main modal
   useEffect(() => {
@@ -221,6 +223,14 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
                   {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </span>
+                {/* Status Management button */}
+                <button
+                  onClick={() => setShowStatusManagement(true)}
+                  className="ml-2 px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                  title="Manage Status"
+                >
+                  Status
+                </button>
               </div>
               {/* Unarchive button for archived objectives */}
               {currentObjective.archived && (
@@ -653,6 +663,13 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
             </div>
           </div>
         </div>
+      )}
+      {/* Status Management Modal */}
+      {showStatusManagement && (
+        <StatusManagementModal
+          objective={currentObjective}
+          onClose={() => setShowStatusManagement(false)}
+        />
       )}
     </>
   );

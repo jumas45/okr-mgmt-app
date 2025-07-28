@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useDataStore, StorageType } from './useDataStore';
 import { Objective, KeyResult, CheckIn, OKRSettings, User, Quarter } from '../types';
 import { calculateObjectiveStatus } from '../utils/calculations';
+// Migration helper: copy all data between stores (no React hooks)
+// Uses direct localStorage and sql.js for SQLite
+// @ts-expect-error: sql.js has no types in this project
+import initSqlJs from 'sql.js';
 
 const defaultUser: User = {
   id: 'user-1',
@@ -41,6 +45,76 @@ interface OKRDataContextType {
 }
 
 const OKRDataContext = createContext<OKRDataContextType | undefined>(undefined);
+
+export async function migrateDataStore(direction: 'to-sqlite' | 'to-isolated') {
+  // Migrate objectives
+  const lsObjectives = JSON.parse(localStorage.getItem('okr-objectives') || '[]');
+  const lsSettings = JSON.parse(localStorage.getItem('okr-settings') || '{}');
+
+  // Open SQLite DB from IndexedDB
+  function loadFromIndexedDB(key = 'okr-sqlite-db'): Promise<Uint8Array | null> {
+    return new Promise((resolve) => {
+      const request = indexedDB.open('okr-db', 1);
+      request.onupgradeneeded = function () {
+        request.result.createObjectStore('db');
+      };
+      request.onsuccess = function () {
+        const db = request.result;
+        const tx = db.transaction('db', 'readonly');
+        const store = tx.objectStore('db');
+        const getReq = store.get(key);
+        getReq.onsuccess = function () {
+          resolve(getReq.result || null);
+          db.close();
+        };
+        getReq.onerror = function () {
+          resolve(null);
+          db.close();
+        };
+      };
+      request.onerror = function () { resolve(null); };
+    });
+  }
+  function saveToIndexedDB(dbUint8: Uint8Array, key = 'okr-sqlite-db') {
+    const request = indexedDB.open('okr-db', 1);
+    request.onupgradeneeded = function () {
+      request.result.createObjectStore('db');
+    };
+    request.onsuccess = function () {
+      const db = request.result;
+      const tx = db.transaction('db', 'readwrite');
+      tx.objectStore('db').put(dbUint8, key);
+      tx.oncomplete = function () { db.close(); };
+    };
+  }
+
+  const SQL = await initSqlJs({ locateFile: (file: string) => `https://sql.js.org/dist/${file}` });
+  const dbFile = await loadFromIndexedDB();
+  let db;
+  if (dbFile) {
+    db = new SQL.Database(new Uint8Array(dbFile));
+  } else {
+    db = new SQL.Database();
+  }
+  db.run('CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT)');
+
+  if (direction === 'to-sqlite') {
+    db.run('INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)', ['okr-objectives', JSON.stringify(lsObjectives)]);
+    db.run('INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)', ['okr-settings', JSON.stringify(lsSettings)]);
+    const dbUint8 = db.export();
+    saveToIndexedDB(dbUint8);
+  } else {
+    // Copy from SQLite to localStorage
+    const resObj = db.exec('SELECT value FROM kv WHERE key = ?', ['okr-objectives']);
+    const resSettings = db.exec('SELECT value FROM kv WHERE key = ?', ['okr-settings']);
+    if (resObj[0] && resObj[0].values[0]) {
+      localStorage.setItem('okr-objectives', resObj[0].values[0][0]);
+    }
+    if (resSettings[0] && resSettings[0].values[0]) {
+      localStorage.setItem('okr-settings', resSettings[0].values[0][0]);
+    }
+  }
+}
 
 export function OKRDataProvider({ children }: { children: React.ReactNode }) {
   // Workspace management helpers
@@ -98,13 +172,15 @@ export function OKRDataProvider({ children }: { children: React.ReactNode }) {
       } as Objective;
     });
   };
-  const [objectives, setObjectives] = useLocalStorage<Objective[]>('okr-objectives', []);
+  // Use storage type from settings (default: isolated)
+  const storageType = (localStorage.getItem('okr-storage-type') as StorageType) || 'isolated';
+  const [objectives, setObjectives] = useDataStore<Objective[]>('okr-objectives', [], storageType);
   // Apply migration on load
   React.useEffect(() => {
     setObjectives(prev => migrateObjectives(prev));
     // eslint-disable-next-line
   }, []);
-  const [settings, setSettings] = useLocalStorage<OKRSettings>('okr-settings', defaultSettings);
+  const [settings, setSettings] = useDataStore<OKRSettings>('okr-settings', defaultSettings, storageType);
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
   const triggerUpdate = useCallback(() => {

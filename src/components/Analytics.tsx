@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, TrendingUp, Target, Award, Archive, Building2, Users2, User } from 'lucide-react';
+import { BarChart, TrendingUp, Target, Award, Archive, Building2, Users2, User, Pause, XCircle } from 'lucide-react';
 import { X as XIcon } from 'lucide-react';
 import { useOKRData } from '../hooks/useOKRData';
 import ObjectiveDetail from './ObjectiveDetail';
@@ -29,17 +29,21 @@ export default function Analytics() {
   const totalObjectives = currentObjectives.length;
   const totalKeyResults = currentObjectives.reduce((sum, obj) => sum + obj.keyResults.length, 0);
   const completedObjectives = currentObjectives.filter(obj => obj.progress === 100).length;
+  const onHoldObjectives = currentObjectives.filter(obj => obj.status === 'on-hold').length;
+  const cancelledObjectives = currentObjectives.filter(obj => obj.status === 'cancelled').length;
   const averageProgress = totalObjectives > 0 
     ? Math.round(currentObjectives.reduce((sum, obj) => sum + obj.progress, 0) / totalObjectives)
     : 0;
 
   // Progress distribution
   const progressRanges = {
-    'Not Started (0%)': currentObjectives.filter(obj => obj.progress === 0).length,
-    'Behind (1-39%)': currentObjectives.filter(obj => obj.progress > 0 && obj.progress < 40).length,
-    'At Risk (40-69%)': currentObjectives.filter(obj => obj.progress >= 40 && obj.progress < 70).length,
-    'On Track (70-99%)': currentObjectives.filter(obj => obj.progress >= 70 && obj.progress < 100).length,
+    'Not Started (0%)': currentObjectives.filter(obj => obj.progress === 0 && obj.status !== 'on-hold' && obj.status !== 'cancelled').length,
+    'Behind (1-39%)': currentObjectives.filter(obj => obj.progress > 0 && obj.progress < 40 && obj.status !== 'on-hold' && obj.status !== 'cancelled').length,
+    'At Risk (40-69%)': currentObjectives.filter(obj => obj.progress >= 40 && obj.progress < 70 && obj.status !== 'on-hold' && obj.status !== 'cancelled').length,
+    'On Track (70-99%)': currentObjectives.filter(obj => obj.progress >= 70 && obj.progress < 100 && obj.status !== 'on-hold' && obj.status !== 'cancelled').length,
     'Completed (100%)': currentObjectives.filter(obj => obj.progress === 100).length,
+    'On Hold': currentObjectives.filter(obj => obj.status === 'on-hold').length,
+    'Cancelled': currentObjectives.filter(obj => obj.status === 'cancelled').length,
   };
 
   // Level breakdown
@@ -56,6 +60,8 @@ export default function Analytics() {
       case 'At Risk (40-69%)': return 'bg-amber-500';
       case 'On Track (70-99%)': return 'bg-blue-500';
       case 'Completed (100%)': return 'bg-green-500';
+      case 'On Hold': return 'bg-orange-500';
+      case 'Cancelled': return 'bg-red-600';
       default: return 'bg-gray-400';
     }
   };
@@ -153,6 +159,26 @@ export default function Analytics() {
           </div>
           <h3 className="text-sm font-medium text-yellow-700">Archived</h3>
         </div>
+
+        <div className="bg-orange-50 p-6 rounded-xl border border-orange-100 cursor-pointer hover:bg-orange-100 transition mb-2 mr-2"
+          onClick={() => openFilteredModal('Objectives On Hold', obj => obj.status === 'on-hold')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <Pause className="w-8 h-8 text-orange-600" />
+            <span className="text-2xl font-bold text-gray-900">{onHoldObjectives}</span>
+          </div>
+          <h3 className="text-sm font-medium text-orange-700">On Hold</h3>
+        </div>
+
+        <div className="bg-red-50 p-6 rounded-xl border border-red-100 cursor-pointer hover:bg-red-100 transition mb-2 mr-2"
+          onClick={() => openFilteredModal('Cancelled Objectives', obj => obj.status === 'cancelled')}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <XCircle className="w-8 h-8 text-red-600" />
+            <span className="text-2xl font-bold text-gray-900">{cancelledObjectives}</span>
+          </div>
+          <h3 className="text-sm font-medium text-red-700">Cancelled</h3>
+        </div>
       </div>
 
       {/* Row 1: Tags */}
@@ -221,11 +247,13 @@ export default function Analytics() {
               <button key={range} className="flex items-center justify-between w-full hover:bg-blue-50 rounded transition p-1 mb-2 mr-2"
                 onClick={() => {
                   let filterFn: (obj: Objective) => boolean = () => false;
-                  if (range === 'Not Started (0%)') filterFn = obj => obj.progress === 0;
-                  else if (range === 'Behind (1-39%)') filterFn = obj => obj.progress > 0 && obj.progress < 40;
-                  else if (range === 'At Risk (40-69%)') filterFn = obj => obj.progress >= 40 && obj.progress < 70;
-                  else if (range === 'On Track (70-99%)') filterFn = obj => obj.progress >= 70 && obj.progress < 100;
+                  if (range === 'Not Started (0%)') filterFn = obj => obj.progress === 0 && obj.status !== 'on-hold' && obj.status !== 'cancelled';
+                  else if (range === 'Behind (1-39%)') filterFn = obj => obj.progress > 0 && obj.progress < 40 && obj.status !== 'on-hold' && obj.status !== 'cancelled';
+                  else if (range === 'At Risk (40-69%)') filterFn = obj => obj.progress >= 40 && obj.progress < 70 && obj.status !== 'on-hold' && obj.status !== 'cancelled';
+                  else if (range === 'On Track (70-99%)') filterFn = obj => obj.progress >= 70 && obj.progress < 100 && obj.status !== 'on-hold' && obj.status !== 'cancelled';
                   else if (range === 'Completed (100%)') filterFn = obj => obj.progress === 100;
+                  else if (range === 'On Hold') filterFn = obj => obj.status === 'on-hold';
+                  else if (range === 'Cancelled') filterFn = obj => obj.status === 'cancelled';
                   openFilteredModal(range, filterFn);
                 }}
               >
