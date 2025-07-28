@@ -1,16 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useOKRData } from '../hooks/useOKRData';
 import { OKRDataProvider } from '../hooks/OKRDataContext';
 
-// Mock localStorage
+// Mock localStorage - will be handled by setup.ts
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 function customRenderHook(callback) {
   return renderHook(callback, {

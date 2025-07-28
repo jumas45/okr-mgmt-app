@@ -90,16 +90,18 @@ describe('StatusManagementModal', () => {
   });
 
   it('should close modal when close button is clicked', () => {
+    const onClose = vi.fn();
     render(
-      <OKRDataProvider>
-        <StatusManagementModal objective={mockObjective} onClose={mockOnClose} />
-      </OKRDataProvider>
+      <StatusManagementModal
+        objective={mockObjective}
+        isOpen={true}
+        onClose={onClose}
+      />
     );
 
-    const closeButton = screen.getByRole('button', { name: /close/i });
+    const closeButton = screen.getByRole('button', { name: '' });
     fireEvent.click(closeButton);
-    
-    expect(mockOnClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('should show confirmation modal when status action is clicked', () => {

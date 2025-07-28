@@ -1,17 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
-// Ensure document is available
-if (typeof document === 'undefined') {
-  const { JSDOM } = require('jsdom');
-  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-    url: 'http://localhost',
-  });
-  global.document = dom.window.document;
-  global.window = dom.window;
-  global.navigator = dom.window.navigator;
-}
-
 // Mock window.confirm
 Object.defineProperty(window, 'confirm', {
   writable: true,

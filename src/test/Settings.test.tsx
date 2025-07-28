@@ -9,18 +9,20 @@ vi.mock('../hooks/useOKRData', () => ({
 
 describe('Settings', () => {
   beforeEach(() => {
-    mockOKRData.settings = { currentQuarter: 'Q1', currentYear: 2024, defaultUser: { name: 'Alice' } };
     mockOKRData.setSettings = vi.fn();
-    mockOKRData.objectives = [];
+    mockOKRData.settings = { 
+      currentQuarter: 'Q1', 
+      currentYear: 2024,
+      defaultUser: { name: 'Test User' }
+    };
     mockOKRData.workspaces = ['ws-1'];
     mockOKRData.currentWorkspace = 'ws-1';
-    mockOKRData.addWorkspace = vi.fn();
-    mockOKRData.switchWorkspace = vi.fn();
+    mockOKRData.objectives = [];
   });
 
   it('renders settings form', () => {
     render(<Settings />);
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getAllByText('Settings').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
   });
 

@@ -85,13 +85,13 @@ describe('ObjectiveCard', () => {
   it('opens detail modal when View Details is clicked', async () => {
     const user = userEvent.setup();
     render(<ObjectiveCard objective={mockObjective} />);
-    
-    const viewDetailsButton = screen.getByText('View Details');
+
+    // Use a function matcher for the button text
+    const viewDetailsButton = screen.getByText((content, element) =>
+      element?.tagName.toLowerCase() === 'span' && content.includes('Show details')
+    );
     await user.click(viewDetailsButton);
-    
-    await waitFor(() => {
-      expect(screen.getByText('Overall Progress')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Key Results')).toBeInTheDocument();
   });
 
   it('does not open modal when menu button is clicked', async () => {

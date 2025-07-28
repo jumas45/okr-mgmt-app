@@ -3,6 +3,7 @@ import { X, AlertTriangle, CheckCircle, Pause, XCircle, Play, RotateCcw } from '
 import { Objective, OKRStatus } from '../types';
 import { useOKRData } from '../hooks/useOKRData';
 import toast from 'react-hot-toast';
+import { getStatusColor } from '../utils/calculations';
 
 interface StatusManagementModalProps {
   objective: Objective;
