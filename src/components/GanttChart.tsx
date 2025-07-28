@@ -17,6 +17,13 @@ const levelIcons: Record<OKRLevel, { icon: React.ReactNode; color: string }> = {
   individual: { icon: <User className="w-4 h-4" />, color: 'text-purple-600' },
 };
 
+// Level background color mapping
+const levelBgColors: Record<OKRLevel, string> = {
+  company: 'bg-blue-50',
+  team: 'bg-green-50', 
+  individual: 'bg-purple-50',
+};
+
 function getQuartersBetween(startYear: number, endYear: number, startQuarter?: Quarter, endQuarter?: Quarter) {
   const quarters = [];
   const allQuarters: Quarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -409,7 +416,7 @@ export default function GanttChart() {
                 const isLevelExpanded = expandedLevels[level] !== false;
                 
                 return [
-                  <tr key={`level-${level}`} className="bg-gray-100">
+                  <tr key={`level-${level}`} className={levelBgColors[level]}>
                     <td colSpan={3 + quarters.length} className="p-2">
                       <div className="flex items-center">
                         <button

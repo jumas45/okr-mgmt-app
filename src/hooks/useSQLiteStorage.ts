@@ -47,6 +47,7 @@ function loadFromIndexedDB(key = 'okr-sqlite-db'): Promise<Uint8Array | null> {
 }
 
 // Migration function to update existing data to support new status types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migrateStatusData(db: any) {
   try {
     // Check if we need to migrate status data
