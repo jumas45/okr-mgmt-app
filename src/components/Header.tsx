@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dashboard, Analytics, Archive, Settings, List } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Archive, Settings, List } from 'lucide-react';
 import OkrLogo from '../assets/okr-logo.png';
 import { useOKRData } from '../hooks/useOKRData';
 
@@ -22,9 +22,9 @@ declare global {
 
 export default function Header({ currentView, onViewChange, currentQuarter, currentYear, onQuarterYearChange, darkMode, setDarkMode }: HeaderProps) {
   const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Dashboard },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'gantt', label: 'Timeline', icon: List },
-    { id: 'analytics', label: 'Analytics', icon: Analytics },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'okr-list', label: 'OKR List', icon: List }, // Move this to the end, remove Hierarchy
   ];
 
