@@ -15,7 +15,7 @@ interface ObjectiveDetailProps {
 }
 
 export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailProps) {
-  const { updateObjective, objectives, updateTrigger, duplicateObjective, settings, deleteObjective, restoreObjective } = useOKRData();
+  const { updateObjective, objectives, duplicateObjective, settings, deleteObjective, restoreObjective } = useOKRData();
   const [showParentDetail, setShowParentDetail] = useState<Objective | null>(null);
   const [showChildDetail, setShowChildDetail] = useState<Objective | null>(null);
   const [showCreateKR, setShowCreateKR] = useState<{mode: 'add'} | {mode: 'edit', keyResult: KeyResult} | false>(false);
@@ -70,7 +70,7 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
   // Get the current objective data to ensure we have the latest state
   const currentObjective = React.useMemo(() => 
     objectives.find(obj => obj.id === objective.id) || objective,
-    [objectives, objective.id, updateTrigger]
+    [objectives, objective]
   );
   // Find parent and children
   const parentObjective = currentObjective.parentId ? objectives.find(obj => obj.id === currentObjective.parentId) : null;
@@ -162,9 +162,9 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
   function handleOnHoldWithChildren() {
     // Set all descendants to on-hold first, then the objective itself
     allDescendants.forEach(desc => {
-      updateObjective(desc.id, { ...desc, status: 'on-hold' });
+      updateObjective(desc.id, { status: 'on-hold' });
     });
-    updateObjective(currentObjective.id, { ...currentObjective, status: 'on-hold' });
+    updateObjective(currentObjective.id, { status: 'on-hold' });
     setShowOnHoldModal(false);
     toast.success('Objective and children set to On Hold!');
   }
@@ -172,9 +172,9 @@ export default function ObjectiveDetail({ objective, onClose }: ObjectiveDetailP
   function handleCancelWithChildren() {
     // Set all descendants to cancelled first, then the objective itself
     allDescendants.forEach(desc => {
-      updateObjective(desc.id, { ...desc, status: 'cancelled' });
+      updateObjective(desc.id, { status: 'cancelled' });
     });
-    updateObjective(currentObjective.id, { ...currentObjective, status: 'cancelled' });
+    updateObjective(currentObjective.id, { status: 'cancelled' });
     setShowCancelModal(false);
     toast.success('Objective and children cancelled!');
   }

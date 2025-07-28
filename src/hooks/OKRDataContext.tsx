@@ -46,6 +46,7 @@ interface OKRDataContextType {
 
 const OKRDataContext = createContext<OKRDataContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export async function migrateDataStore(direction: 'to-sqlite' | 'to-isolated') {
   // Migrate objectives
   const lsObjectives = JSON.parse(localStorage.getItem('okr-objectives') || '[]');
@@ -303,7 +304,7 @@ export function OKRDataProvider({ children }: { children: React.ReactNode }) {
               ...obj, 
               ...updates, 
               updatedAt: new Date().toISOString(),
-              status: updates.progress !== undefined ? calculateObjectiveStatus(updates.progress) : obj.status
+              status: updates.status !== undefined ? updates.status : (updates.progress !== undefined ? calculateObjectiveStatus(updates.progress) : obj.status)
             }
           : obj
       );
@@ -496,6 +497,7 @@ export function OKRDataProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOKRDataContext() {
   const ctx = useContext(OKRDataContext);
   if (!ctx) throw new Error('useOKRDataContext must be used within an OKRDataProvider');
