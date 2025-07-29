@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, BarChart3, Archive, Settings, List } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Archive, Settings, List, Sun, Moon } from 'lucide-react';
 import OkrLogo from '../assets/okr-logo.png';
 import { useOKRData } from '../hooks/useOKRData';
 
@@ -153,19 +153,41 @@ export default function Header({ currentView, onViewChange, currentQuarter, curr
               {showSettingsMenu && (
                 <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
                   <button
-                    onClick={() => { setShowSettingsMenu(false); onViewChange('settings'); }}
+                    onClick={() => { 
+                      try {
+                        setShowSettingsMenu(false); 
+                        onViewChange('settings'); 
+                      } catch (error) {
+                        console.error('Error navigating to settings:', error);
+                        setShowSettingsMenu(false);
+                      }
+                    }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   >
                     <Settings className="w-4 h-4" aria-hidden="true" /> Settings
                   </button>
                   <button
-                    onClick={() => { setShowSettingsMenu(false); onViewChange('archive'); }}
+                    onClick={() => { 
+                      try {
+                        setShowSettingsMenu(false); 
+                        onViewChange('archive'); 
+                      } catch (error) {
+                        console.error('Error navigating to archive:', error);
+                        setShowSettingsMenu(false);
+                      }
+                    }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   >
                     <Archive className="w-4 h-4" aria-hidden="true" /> Archive
                   </button>
                   <button
-                    onClick={() => setDarkMode(d => !d)}
+                    onClick={() => {
+                      try {
+                        setDarkMode(d => !d);
+                      } catch (error) {
+                        console.error('Error toggling dark mode:', error);
+                      }
+                    }}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                     aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                   >

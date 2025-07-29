@@ -36,21 +36,39 @@ function App() {
   };
 
   const renderCurrentView = () => {
-    switch (currentView) {
-      case 'analytics':
-        return <Analytics />;
-      case 'archive':
-        return <Archive />;
-      case 'settings':
-        return <Settings />;
-      case 'hierarchy':
-        return <Hierarchy />;
-      case 'gantt':
-        return <GanttChart />;
-      case 'okr-list':
-        return <OkrList />;
-      default:
-        return <Dashboard searchTerm={searchTerm} onSearch={setSearchTerm} />;
+    try {
+      switch (currentView) {
+        case 'analytics':
+          return <Analytics />;
+        case 'archive':
+          return <Archive />;
+        case 'settings':
+          return <Settings />;
+        case 'hierarchy':
+          return <Hierarchy />;
+        case 'gantt':
+          return <GanttChart />;
+        case 'okr-list':
+          return <OkrList />;
+        default:
+          return <Dashboard searchTerm={searchTerm} onSearch={setSearchTerm} />;
+      }
+    } catch (error) {
+      console.error('Error rendering view:', error);
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+            <p className="text-gray-600 mb-4">There was an error loading this view.</p>
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      );
     }
   };
 

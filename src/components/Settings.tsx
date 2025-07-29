@@ -6,56 +6,84 @@ import { Quarter } from '../types';
 import { exportOKRData, importOKRData } from '../utils/calculations';
 
 export default function Settings() {
-  const { settings, setSettings, objectives } = useOKRData();
+  const { settings, setSettings, objectives, workspaces, currentWorkspace, addWorkspace, switchWorkspace } = useOKRData();
   const [formData, setFormData] = useState(settings);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = () => {
-    setSettings(formData);
-    setMessage('Settings saved successfully!');
-    setTimeout(() => setMessage(''), 3000);
+    try {
+      setSettings(formData);
+      setMessage('Settings saved successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setMessage('Error saving settings. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   const handleExport = () => {
-    const data = exportOKRData(objectives);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `okr-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setMessage('Data exported successfully!');
-    setTimeout(() => setMessage(''), 3000);
+    try {
+      const data = exportOKRData(objectives);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `okr-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setMessage('Data exported successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      setMessage('Error exporting data. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   const handleImport = () => {
     if (!importFile) return;
     
+    setIsLoading(true);
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const result = e.target?.result as string;
         const importedData = importOKRData(result);
-        // In a real app, you'd want to merge or replace data more carefully
         console.log('Imported data:', importedData);
         setMessage('Data imported successfully! Please refresh the page to see changes.');
         setTimeout(() => setMessage(''), 5000);
-      } catch {
+        setImportFile(null);
+      } catch (error) {
+        console.error('Error importing data:', error);
         setMessage('Error importing data. Please check the file format.');
         setTimeout(() => setMessage(''), 3000);
+      } finally {
+        setIsLoading(false);
       }
+    };
+    reader.onerror = () => {
+      setMessage('Error reading file. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+      setIsLoading(false);
     };
     reader.readAsText(importFile);
   };
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset all data? This cannot be undone.')) {
-      localStorage.clear();
-      window.location.reload();
+      try {
+        localStorage.clear();
+        window.location.reload();
+      } catch (error) {
+        console.error('Error resetting data:', error);
+        setMessage('Error resetting data. Please try again.');
+        setTimeout(() => setMessage(''), 3000);
+      }
     }
   };
 
@@ -71,31 +99,51 @@ export default function Settings() {
   };
 
   // Tenant management
-  const { workspaces, currentWorkspace, addWorkspace, switchWorkspace } = useOKRData();
   const [newWorkspace, setNewWorkspace] = useState('');
   const [renamingWorkspace, setRenamingWorkspace] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
   // Add delete, rename, and clone logic
   const deleteWorkspace = (name: string) => {
-    if (name === currentWorkspace) return;
-    const newWorkspaces = workspaces.filter(w => w !== name);
-    localStorage.setItem('okr-workspaces', JSON.stringify(newWorkspaces));
-    window.location.reload(); // force reload to clear data for deleted workspace
+    if (name === currentWorkspace) {
+      setMessage('Cannot delete the current workspace. Please switch to another workspace first.');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+    try {
+      const newWorkspaces = workspaces.filter(w => w !== name);
+      localStorage.setItem('okr-workspaces', JSON.stringify(newWorkspaces));
+      window.location.reload(); // force reload to clear data for deleted workspace
+    } catch (error) {
+      console.error('Error deleting workspace:', error);
+      setMessage('Error deleting workspace. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
+
   const renameWorkspace = (oldName: string, newName: string) => {
-    if (!newName.trim() || workspaces.includes(newName.trim())) return;
-    const newWorkspaces = workspaces.map(w => (w === oldName ? newName.trim() : w));
-    localStorage.setItem('okr-workspaces', JSON.stringify(newWorkspaces));
-    // Migrate all objectives for this workspace
-    const okrs: import('../types').Objective[] = JSON.parse(localStorage.getItem('okr-objectives') || '[]');
-    okrs.forEach(obj => {
-      if (obj.workspaceId === oldName) {
-        obj.workspaceId = newName.trim();
-      }
-    });
-    localStorage.setItem('okr-objectives', JSON.stringify(okrs));
-    window.location.reload();
+    if (!newName.trim() || workspaces.includes(newName.trim())) {
+      setMessage('Workspace name already exists or is invalid.');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+    try {
+      const newWorkspaces = workspaces.map(w => (w === oldName ? newName.trim() : w));
+      localStorage.setItem('okr-workspaces', JSON.stringify(newWorkspaces));
+      // Migrate all objectives for this workspace
+      const okrs: import('../types').Objective[] = JSON.parse(localStorage.getItem('okr-objectives') || '[]');
+      okrs.forEach(obj => {
+        if (obj.workspaceId === oldName) {
+          obj.workspaceId = newName.trim();
+        }
+      });
+      localStorage.setItem('okr-objectives', JSON.stringify(okrs));
+      window.location.reload();
+    } catch (error) {
+      console.error('Error renaming workspace:', error);
+      setMessage('Error renaming workspace. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   // Helper to generate a new unique ID (simple random string)
@@ -110,61 +158,67 @@ export default function Settings() {
       setTimeout(() => setMessage(''), 3000);
       return;
     }
-    // Clone objectives for the source workspace
-    const okrs: import('../types').Objective[] = JSON.parse(localStorage.getItem('okr-objectives') || '[]');
-    // Deep clone objectives and key results, assign new IDs, and set workspaceId
-    const clonedObjectives = okrs
-      .filter(obj => obj.workspaceId === source)
-      .map(obj => {
-        const newObjId = generateId();
-        // Map old key result IDs to new ones
-        const krIdMap: Record<string, string> = {};
-        const clonedKRs = obj.keyResults.map(kr => {
-          const newKrId = generateId();
-          krIdMap[kr.id] = newKrId;
+    try {
+      // Clone objectives for the source workspace
+      const okrs: import('../types').Objective[] = JSON.parse(localStorage.getItem('okr-objectives') || '[]');
+      // Deep clone objectives and key results, assign new IDs, and set workspaceId
+      const clonedObjectives = okrs
+        .filter(obj => obj.workspaceId === source)
+        .map(obj => {
+          const newObjId = generateId();
+          // Map old key result IDs to new ones
+          const krIdMap: Record<string, string> = {};
+          const clonedKRs = obj.keyResults.map(kr => {
+            const newKrId = generateId();
+            krIdMap[kr.id] = newKrId;
+            return {
+              ...kr,
+              id: newKrId,
+              workspaceId: newName.trim(),
+              checkIns: kr.checkIns.map(ci => ({ ...ci, id: generateId() })),
+            };
+          });
+          // If parentId is in the same workspace, remap it
+          let newParentId = undefined;
+          if (obj.parentId) {
+            const parentObj = okrs.find(o => o.id === obj.parentId && o.workspaceId === source);
+            if (parentObj) {
+              // We'll remap after all IDs are known
+              newParentId = parentObj.id;
+            }
+          }
           return {
-            ...kr,
-            id: newKrId,
+            ...obj,
+            id: newObjId,
             workspaceId: newName.trim(),
-            checkIns: kr.checkIns.map(ci => ({ ...ci, id: generateId() })),
+            keyResults: clonedKRs,
+            parentId: newParentId,
           };
         });
-        // If parentId is in the same workspace, remap it
-        let newParentId = undefined;
-        if (obj.parentId) {
-          const parentObj = okrs.find(o => o.id === obj.parentId && o.workspaceId === source);
-          if (parentObj) {
-            // We'll remap after all IDs are known
-            newParentId = parentObj.id;
-          }
-        }
-        return {
-          ...obj,
-          id: newObjId,
-          workspaceId: newName.trim(),
-          keyResults: clonedKRs,
-          parentId: newParentId,
-        };
+      // Remap parentIds in cloned objectives
+      const oldToNewId: Record<string, string> = {};
+      okrs.filter(obj => obj.workspaceId === source).forEach((obj, i) => {
+        oldToNewId[obj.id] = clonedObjectives[i].id;
       });
-    // Remap parentIds in cloned objectives
-    const oldToNewId: Record<string, string> = {};
-    okrs.filter(obj => obj.workspaceId === source).forEach((obj, i) => {
-      oldToNewId[obj.id] = clonedObjectives[i].id;
-    });
-    clonedObjectives.forEach(obj => {
-      if (obj.parentId && oldToNewId[obj.parentId]) {
-        obj.parentId = oldToNewId[obj.parentId];
-      }
-    });
-    // Add new workspace to list
-    const newWorkspaces = [...workspaces, newName.trim()];
-    localStorage.setItem('okr-workspaces', JSON.stringify(newWorkspaces));
-    // Add cloned objectives to storage
-    const allObjectives = okrs.concat(clonedObjectives);
-    localStorage.setItem('okr-objectives', JSON.stringify(allObjectives));
-    setMessage('Workspace cloned successfully!');
-    setTimeout(() => setMessage(''), 3000);
-    window.location.reload();
+      clonedObjectives.forEach(obj => {
+        if (obj.parentId && oldToNewId[obj.parentId]) {
+          obj.parentId = oldToNewId[obj.parentId];
+        }
+      });
+      // Add new workspace to list
+      const newWorkspaces = [...workspaces, newName.trim()];
+      localStorage.setItem('okr-workspaces', JSON.stringify(newWorkspaces));
+      // Add cloned objectives to storage
+      const allObjectives = okrs.concat(clonedObjectives);
+      localStorage.setItem('okr-objectives', JSON.stringify(allObjectives));
+      setMessage('Workspace cloned successfully!');
+      setTimeout(() => setMessage(''), 3000);
+      window.location.reload();
+    } catch (error) {
+      console.error('Error cloning workspace:', error);
+      setMessage('Error cloning workspace. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   // Storage type setting
@@ -172,17 +226,28 @@ export default function Settings() {
   const handleStorageTypeChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value;
     if (newType === storageType) return;
-    setStorageType(newType);
-    localStorage.setItem('okr-storage-type', newType);
+    
+    setIsLoading(true);
     setMessage('Migrating data, please wait...');
-    if (newType === 'sqlite') {
-      await migrateDataStore('to-sqlite');
-      setMessage('Data migrated to SQLite. Reloading...');
-    } else {
-      await migrateDataStore('to-isolated');
-      setMessage('Data migrated to Isolated Storage. Reloading...');
+    
+    try {
+      setStorageType(newType);
+      localStorage.setItem('okr-storage-type', newType);
+      
+      if (newType === 'sqlite') {
+        await migrateDataStore('to-sqlite');
+        setMessage('Data migrated to SQLite. Reloading...');
+      } else {
+        await migrateDataStore('to-isolated');
+        setMessage('Data migrated to Isolated Storage. Reloading...');
+      }
+      setTimeout(() => { window.location.reload(); }, 1200);
+    } catch (error) {
+      console.error('Error migrating data:', error);
+      setMessage('Error migrating data. Please try again.');
+      setTimeout(() => setMessage(''), 3000);
+      setIsLoading(false);
     }
-    setTimeout(() => { window.location.reload(); }, 1200);
   };
 
   return (
@@ -215,8 +280,19 @@ export default function Settings() {
             />
           </div>
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            onClick={() => { if (newWorkspace.trim()) { addWorkspace(newWorkspace.trim()); setNewWorkspace(''); } }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+            onClick={() => { 
+              if (newWorkspace.trim()) { 
+                try {
+                  addWorkspace(newWorkspace.trim()); 
+                  setNewWorkspace(''); 
+                } catch (error) {
+                  console.error('Error adding workspace:', error);
+                  setMessage('Error adding workspace. Please try again.');
+                  setTimeout(() => setMessage(''), 3000);
+                }
+              } 
+            }}
             disabled={!newWorkspace.trim() || workspaces.includes(newWorkspace.trim())}
           >
             Add
@@ -226,7 +302,15 @@ export default function Settings() {
           <span className="text-xs text-gray-500 font-medium">Workspace</span>
           <select
             value={currentWorkspace}
-            onChange={e => switchWorkspace(e.target.value)}
+            onChange={e => {
+              try {
+                switchWorkspace(e.target.value);
+              } catch (error) {
+                console.error('Error switching workspace:', error);
+                setMessage('Error switching workspace. Please try again.');
+                setTimeout(() => setMessage(''), 3000);
+              }
+            }}
             className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {workspaces.map(w => (
@@ -255,7 +339,15 @@ export default function Settings() {
                     <span className={w === currentWorkspace ? 'font-bold text-blue-700' : ''}>{w}</span>
                     {w !== currentWorkspace && (
                       <>
-                        <button className="text-xs text-blue-600 hover:underline" onClick={() => switchWorkspace(w)}>Switch</button>
+                        <button className="text-xs text-blue-600 hover:underline" onClick={() => {
+                          try {
+                            switchWorkspace(w);
+                          } catch (error) {
+                            console.error('Error switching workspace:', error);
+                            setMessage('Error switching workspace. Please try again.');
+                            setTimeout(() => setMessage(''), 3000);
+                          }
+                        }}>Switch</button>
                         <button className="text-xs text-yellow-600 hover:underline" onClick={() => { setRenamingWorkspace(w); setRenameValue(w); }}>Rename</button>
                         <button className="text-xs text-red-600 hover:underline" onClick={() => { if (window.confirm('Delete this workspace and all its data?')) deleteWorkspace(w); }}>Delete</button>
                         <button className="text-xs text-indigo-600 hover:underline flex items-center gap-1" onClick={() => {
@@ -282,6 +374,7 @@ export default function Settings() {
             className="border border-gray-300 rounded px-3 py-2 w-full"
             value={storageType}
             onChange={handleStorageTypeChange}
+            disabled={isLoading}
           >
             <option value="isolated">Isolated Storage (default)</option>
             <option value="sqlite">SQLite (experimental)</option>
@@ -396,7 +489,8 @@ export default function Settings() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={handleSave}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                disabled={isLoading}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
               >
                 <Save className="w-4 h-4" aria-hidden="true" />
                 <span>Save Settings</span>
@@ -417,7 +511,8 @@ export default function Settings() {
                 </p>
                 <button
                   onClick={handleExport}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  disabled={isLoading}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
                 >
                   <Download className="w-4 h-4" aria-hidden="true" />
                   <span>Export Data</span>
@@ -436,10 +531,11 @@ export default function Settings() {
                     accept=".json"
                     onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    disabled={isLoading}
                   />
                   <button
                     onClick={handleImport}
-                    disabled={!importFile}
+                    disabled={!importFile || isLoading}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     <Upload className="w-4 h-4" aria-hidden="true" />
@@ -456,7 +552,8 @@ export default function Settings() {
                 </p>
                 <button
                   onClick={handleReset}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                  disabled={isLoading}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
                 >
                   <RotateCcw className="w-4 h-4" aria-hidden="true" />
                   <span>Reset All Data</span>
