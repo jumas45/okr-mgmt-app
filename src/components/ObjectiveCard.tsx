@@ -171,7 +171,7 @@ export default function ObjectiveCard({ objective }: ObjectiveCardProps) {
               <MoreVertical className="w-4 h-4 text-gray-400" aria-hidden="true" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 min-w-[120px]">
+              <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-10 min-w-[120px]">
                 <button
                   onClick={() => {
                     setShowDetail(true);

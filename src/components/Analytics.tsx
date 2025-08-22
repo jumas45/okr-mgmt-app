@@ -88,89 +88,89 @@ export default function Analytics() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h2>
-        <p className="text-gray-600">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Analytics Dashboard</h2>
+        <p className="text-gray-600 dark:text-gray-400">
           Insights and metrics for {settings.currentQuarter} {settings.currentYear}
         </p>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition mb-2 mr-2"
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition mb-2 mr-2"
           onClick={() => openFilteredModal('Active Objectives', obj => obj.progress < 100)}
         >
           <div className="flex items-center justify-between mb-2">
             <Target className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">{totalObjectives}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalObjectives}</span>
           </div>
-          <h3 className="text-sm font-medium text-gray-600">Active Objectives</h3>
+          <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Objectives</h3>
         </div>
 
-        <div className="bg-green-50 p-6 rounded-xl border border-green-100 cursor-pointer hover:bg-green-100 transition mb-2 mr-2"
+        <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl border border-green-100 dark:border-green-800 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition mb-2 mr-2"
           onClick={() => openFilteredModal('Completed Objectives', obj => obj.progress === 100)}
         >
           <div className="flex items-center justify-between mb-2">
             <Award className="w-8 h-8 text-green-600" />
-            <span className="text-2xl font-bold text-gray-900">{completedObjectives}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{completedObjectives}</span>
           </div>
-          <h3 className="text-sm font-medium text-gray-700">Completed</h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200">Completed</h3>
         </div>
 
-        <div className="bg-red-50 p-6 rounded-xl border border-red-100 cursor-pointer hover:bg-red-100 transition mb-2 mr-2"
+        <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-100 dark:border-red-800 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition mb-2 mr-2"
           onClick={() => openFilteredModal('Objectives Not Started', obj => obj.progress === 0)}
         >
           <div className="flex items-center justify-between mb-2">
             <XIcon className="w-8 h-8 text-red-500" />
-            <span className="text-2xl font-bold text-gray-900">{currentObjectives.filter(obj => obj.progress === 0).length}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentObjectives.filter(obj => obj.progress === 0).length}</span>
           </div>
-          <h3 className="text-sm font-medium text-red-700">Objectives Not Started</h3>
+          <h3 className="text-sm font-medium text-red-700 dark:text-red-300">Objectives Not Started</h3>
         </div>
 
 
 
-        <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-100 cursor-pointer hover:bg-yellow-100 transition mb-2 mr-2"
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-xl border border-yellow-100 dark:border-yellow-800 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition mb-2 mr-2"
           onClick={() => setFilteredModal({ title: 'Archived Objectives', objectives: archivedObjectives })}
         >
           <div className="flex items-center justify-between mb-2">
             <Archive className="w-8 h-8 text-yellow-600" />
-            <span className="text-2xl font-bold text-gray-900">{archivedObjectives.length}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{archivedObjectives.length}</span>
           </div>
-          <h3 className="text-sm font-medium text-yellow-700">Archived</h3>
+          <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Archived</h3>
         </div>
 
-        <div className="bg-orange-50 p-6 rounded-xl border border-orange-100 cursor-pointer hover:bg-orange-100 transition mb-2 mr-2"
+        <div className="bg-orange-50 dark:bg-orange-900/20 p-6 rounded-xl border border-orange-100 dark:border-orange-800 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition mb-2 mr-2"
           onClick={() => openFilteredModal('Objectives On Hold', obj => obj.status === 'on-hold')}
         >
           <div className="flex items-center justify-between mb-2">
             <Pause className="w-8 h-8 text-orange-600" />
-            <span className="text-2xl font-bold text-gray-900">{onHoldObjectives}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{onHoldObjectives}</span>
           </div>
-          <h3 className="text-sm font-medium text-orange-700">On Hold</h3>
+          <h3 className="text-sm font-medium text-orange-700 dark:text-orange-300">On Hold</h3>
         </div>
 
-        <div className="bg-red-50 p-6 rounded-xl border border-red-100 cursor-pointer hover:bg-red-100 transition mb-2 mr-2"
+        <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-xl border border-red-100 dark:border-red-800 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition mb-2 mr-2"
           onClick={() => openFilteredModal('Cancelled Objectives', obj => obj.status === 'cancelled')}
         >
           <div className="flex items-center justify-between mb-2">
             <XCircle className="w-8 h-8 text-red-600" />
-            <span className="text-2xl font-bold text-gray-900">{cancelledObjectives}</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{cancelledObjectives}</span>
           </div>
-          <h3 className="text-sm font-medium text-red-700">Cancelled</h3>
+          <h3 className="text-sm font-medium text-red-700 dark:text-red-300">Cancelled</h3>
         </div>
       </div>
 
       {/* Row 1: Tags */}
       <div className="mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Tags</h3>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Tags</h3>
           {allTags.length === 0 ? (
-            <div className="text-gray-500">No tags found.</div>
+            <div className="text-gray-500 dark:text-gray-400">No tags found.</div>
           ) : (
             <div className="flex flex-wrap gap-2 mb-2">
               {allTags.map(tag => (
                 <button
                   key={tag}
-                  className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium border border-blue-200 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer mb-2 mr-2"
+                  className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm font-medium border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition cursor-pointer mb-2 mr-2"
                   onClick={() => openFilteredModal(`Objectives tagged "${tag}"`, obj => obj.tags.includes(tag))}
                   type="button"
                 >
@@ -184,18 +184,18 @@ export default function Analytics() {
 
       {/* Row 2: Objectives by Level and Progress Distribution */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Objectives by Level</h3>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Objectives by Level</h3>
           <div className="space-y-4">
             {Object.entries(levelBreakdown).map(([level, count]) => (
-              <button key={level} className="flex items-center justify-between w-full hover:bg-blue-50 rounded transition p-1 mb-2 mr-2"
+              <button key={level} className="flex items-center justify-between w-full hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition p-1 mb-2 mr-2"
                 onClick={() => openFilteredModal(`${level.charAt(0).toUpperCase() + level.slice(1)} Objectives`, obj => obj.level === level)}
               >
                 <div className="flex items-center space-x-3">
                   <div className={`w-4 h-4 rounded ${getLevelColor(level)}`} />
-                  <span className="text-sm text-gray-700 capitalize">{level}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{level}</span>
                 </div>
-                <span className="font-medium text-gray-900">{count}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{count}</span>
               </button>
             ))}
           </div>
@@ -218,7 +218,7 @@ export default function Analytics() {
             })}
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Progress Distribution</h3>
           <div className="space-y-4">
             {Object.entries(progressRanges).map(([range, count]) => (
@@ -239,7 +239,7 @@ export default function Analytics() {
                   <div className={`w-4 h-4 rounded ${getRangeColor(range)}`} />
                   <span className="text-sm text-gray-700">{range}</span>
                 </div>
-                <span className="font-medium text-gray-900">{count}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{count}</span>
               </button>
             ))}
           </div>
@@ -266,7 +266,7 @@ export default function Analytics() {
 
       {/* Row 3: Performance Summary and Objectives by Person */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Performance Summary</h3>
           <div className="space-y-4">
             <button className="flex items-center justify-between p-3 bg-green-50 rounded-lg w-full hover:bg-green-100 transition"
@@ -304,7 +304,7 @@ export default function Analytics() {
             </button>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Objectives by Person</h3>
           <div className="mb-4 relative">
             <label className="text-sm text-gray-600 mr-2">Filter by user:</label>
@@ -316,7 +316,7 @@ export default function Analytics() {
               onChange={e => setUserFilter(e.target.value)}
             />
             {userFilter && (
-              <ul className="absolute left-0 right-0 bg-white border border-gray-200 rounded shadow z-10 mt-1 max-h-40 overflow-y-auto">
+              <ul className="absolute left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow z-10 mt-1 max-h-40 overflow-y-auto">
                 {allOwners.filter(owner => owner.toLowerCase().includes(userFilter.toLowerCase())).length === 0 ? (
                   <li className="px-3 py-2 text-gray-400 text-sm">No users found</li>
                 ) : (
@@ -379,7 +379,7 @@ export default function Analytics() {
           }}
         >
           <div
-            className="bg-white rounded-xl max-w-lg w-full p-6 relative shadow-lg"
+            className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full p-6 relative shadow-lg"
             onClick={e => e.stopPropagation()}
           >
             <button

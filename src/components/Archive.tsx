@@ -53,8 +53,8 @@ export default function Archive() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Archived OKRs</h2>
-        <p className="text-gray-600">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Archived OKRs</h2>
+        <p className="text-gray-600 dark:text-gray-400">
           View and manage your completed or archived objectives
         </p>
       </div>
@@ -68,7 +68,7 @@ export default function Archive() {
             placeholder="Search archived objectives..."
             value={searchTerm}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           />
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function Archive() {
             const progressColor = getProgressBarColor(objective.progress);
             
             return (
-              <div key={objective.id} className="bg-white border border-gray-200 rounded-xl p-6">
+              <div key={objective.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">

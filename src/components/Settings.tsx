@@ -251,150 +251,39 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Settings</h2>
-        <p className="text-gray-600">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Settings</h2>
+        <p className="text-gray-600 dark:text-gray-400">
           Configure your OKR app preferences and manage your data
         </p>
       </div>
 
       {message && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-800">{message}</p>
+        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <p className="text-green-800 dark:text-green-200">{message}</p>
         </div>
       )}
 
-      {/* Workspace Management */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 mb-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Manage Workspaces</h3>
-        <div className="mb-4 flex gap-2 items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Add New Workspace</label>
-            <input
-              type="text"
-              value={newWorkspace}
-              onChange={e => setNewWorkspace(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Workspace name"
-            />
-          </div>
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-            onClick={() => { 
-              if (newWorkspace.trim()) { 
-                try {
-                  addWorkspace(newWorkspace.trim()); 
-                  setNewWorkspace(''); 
-                } catch (error) {
-                  console.error('Error adding workspace:', error);
-                  setMessage('Error adding workspace. Please try again.');
-                  setTimeout(() => setMessage(''), 3000);
-                }
-              } 
-            }}
-            disabled={!newWorkspace.trim() || workspaces.includes(newWorkspace.trim())}
-          >
-            Add
-          </button>
-        </div>
-        <div className="flex items-center gap-2 px-2 py-1 rounded bg-blue-50 border border-blue-100 mb-4">
-          <span className="text-xs text-gray-500 font-medium">Workspace</span>
-          <select
-            value={currentWorkspace}
-            onChange={e => {
-              try {
-                switchWorkspace(e.target.value);
-              } catch (error) {
-                console.error('Error switching workspace:', error);
-                setMessage('Error switching workspace. Please try again.');
-                setTimeout(() => setMessage(''), 3000);
-              }
-            }}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {workspaces.map(w => (
-              <option key={w} value={w}>{w}</option>
-            ))}
-          </select>
-        </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">All Workspaces</label>
-          <ul className="space-y-1">
-            {workspaces.map(w => (
-              <li key={w} className="flex items-center gap-2">
-                {renamingWorkspace === w ? (
-                  <>
-                    <input
-                      className="border border-gray-300 rounded px-2 py-1 text-sm"
-                      value={renameValue}
-                      onChange={e => setRenameValue(e.target.value)}
-                      autoFocus
-                    />
-                    <button className="text-xs text-green-600 hover:underline" onClick={() => { renameWorkspace(w, renameValue); setRenamingWorkspace(null); }}>Save</button>
-                    <button className="text-xs text-gray-500 hover:underline" onClick={() => setRenamingWorkspace(null)}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <span className={w === currentWorkspace ? 'font-bold text-blue-700' : ''}>{w}</span>
-                    {w !== currentWorkspace && (
-                      <>
-                        <button className="text-xs text-blue-600 hover:underline" onClick={() => {
-                          try {
-                            switchWorkspace(w);
-                          } catch (error) {
-                            console.error('Error switching workspace:', error);
-                            setMessage('Error switching workspace. Please try again.');
-                            setTimeout(() => setMessage(''), 3000);
-                          }
-                        }}>Switch</button>
-                        <button className="text-xs text-yellow-600 hover:underline" onClick={() => { setRenamingWorkspace(w); setRenameValue(w); }}>Rename</button>
-                        <button className="text-xs text-red-600 hover:underline" onClick={() => { if (window.confirm('Delete this workspace and all its data?')) deleteWorkspace(w); }}>Delete</button>
-                        <button className="text-xs text-indigo-600 hover:underline flex items-center gap-1" onClick={() => {
-                          const newName = window.prompt('Enter a name for the cloned workspace:');
-                          if (newName) cloneWorkspace(w, newName);
-                        }}>
-                          <Copy className="w-4 h-4" aria-hidden="true" /> Clone
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow border border-gray-200 mt-8">
-        <h2 className="text-2xl font-bold mb-6">Settings</h2>
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Data Storage Type</label>
-          <select
-            className="border border-gray-300 rounded px-3 py-2 w-full"
-            value={storageType}
-            onChange={handleStorageTypeChange}
-            disabled={isLoading}
-          >
-            <option value="isolated">Isolated Storage (default)</option>
-            <option value="sqlite">SQLite (experimental)</option>
-          </select>
-          <div className="text-xs text-gray-500 mt-1">Default is Isolated Storage. Switch to SQLite for advanced use. (Requires reload)</div>
-        </div>
-        <div className="space-y-8">
-          {/* General Settings */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">General Settings</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* General Settings */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+            <Save className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+            General Settings
+          </h3>
+          
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Current Quarter
                 </label>
                 <select
                   value={formData.currentQuarter}
                   onChange={(e) => setFormData(prev => ({ ...prev, currentQuarter: e.target.value as Quarter }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                 >
                   <option value="Q1">Q1</option>
                   <option value="Q2">Q2</option>
@@ -404,14 +293,14 @@ export default function Settings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Current Year
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={formData.currentYear}
                     onChange={(e) => setFormData(prev => ({ ...prev, currentYear: Number(e.target.value) }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                   >
                     {years.map(year => (
                       <option key={year} value={year}>{year}</option>
@@ -423,26 +312,27 @@ export default function Settings() {
                     max={3000}
                     value={newYear}
                     onChange={e => setNewYear(e.target.value ? Number(e.target.value) : '')}
-                    placeholder="Add year"
-                    className="border border-gray-300 rounded-lg px-2 py-2 w-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Add"
+                    className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 w-16 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleAddYear}
-                    className="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     disabled={newYear === '' || years.includes(Number(newYear))}
+                    title="Add new year option"
                   >
-                    Add
+                    +
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6">
-              <h4 className="text-lg font-medium text-gray-900 mb-4">Default User</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Default User Profile</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Name
                   </label>
                   <input
@@ -452,11 +342,11 @@ export default function Settings() {
                       ...prev, 
                       defaultUser: { ...prev.defaultUser, name: e.target.value }
                     }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Email
                   </label>
                   <input
@@ -466,11 +356,11 @@ export default function Settings() {
                       ...prev, 
                       defaultUser: { ...prev.defaultUser, email: e.target.value }
                     }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Role
                   </label>
                   <input
@@ -480,115 +370,264 @@ export default function Settings() {
                       ...prev, 
                       defaultUser: { ...prev.defaultUser, role: e.target.value }
                     }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Storage Type</label>
+              <select
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                value={storageType}
+                onChange={handleStorageTypeChange}
+                disabled={isLoading}
+              >
+                <option value="isolated">Isolated Storage (default)</option>
+                <option value="sqlite">SQLite (experimental)</option>
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Choose your preferred data storage method. SQLite migration requires page reload.</p>
+            </div>
+
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
               <button
                 onClick={handleSave}
                 disabled={isLoading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                <Save className="w-4 h-4" aria-hidden="true" />
+                <Save className="w-4 h-4" />
                 <span>Save Settings</span>
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Data Management */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Data Management</h3>
-            
-            <div className="space-y-6">
-              {/* Export */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Export Data</h4>
-                <p className="text-gray-600 text-sm mb-3">
-                  Download all your OKR data as a JSON file for backup or sharing.
-                </p>
-                <button
-                  onClick={handleExport}
-                  disabled={isLoading}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
-                >
-                  <Download className="w-4 h-4" aria-hidden="true" />
-                  <span>Export Data</span>
-                </button>
+        {/* Workspace Management */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            Workspace Management
+          </h3>
+          
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Workspace</label>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                <span className="text-lg font-medium text-purple-800 dark:text-purple-200">{currentWorkspace}</span>
               </div>
+            </div>
 
-              {/* Import */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Import Data</h4>
-                <p className="text-gray-600 text-sm mb-3">
-                  Upload a previously exported JSON file to restore your OKR data.
-                </p>
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={handleImport}
-                    disabled={!importFile || isLoading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    <Upload className="w-4 h-4" aria-hidden="true" />
-                    <span>Import</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Reset */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Reset All Data</h4>
-                <p className="text-gray-600 text-sm mb-3">
-                  Clear all OKR data and settings. This action cannot be undone.
-                </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add New Workspace</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newWorkspace}
+                  onChange={e => setNewWorkspace(e.target.value)}
+                  className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                  placeholder="Workspace name"
+                />
                 <button
-                  onClick={handleReset}
-                  disabled={isLoading}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  onClick={() => { 
+                    if (newWorkspace.trim()) { 
+                      try {
+                        addWorkspace(newWorkspace.trim()); 
+                        setNewWorkspace(''); 
+                      } catch (error) {
+                        console.error('Error adding workspace:', error);
+                        setMessage('Error adding workspace. Please try again.');
+                        setTimeout(() => setMessage(''), 3000);
+                      }
+                    } 
+                  }}
+                  disabled={!newWorkspace.trim() || workspaces.includes(newWorkspace.trim())}
                 >
-                  <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                  <span>Reset All Data</span>
+                  Add
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Statistics */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Statistics</h3>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{objectives.length}</div>
-                <div className="text-sm text-gray-600">Total Objectives</div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">All Workspaces</label>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {workspaces.map(w => (
+                  <div key={w} className={`p-3 rounded-lg border transition-colors ${w === currentWorkspace 
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                    : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}>
+                    {renamingWorkspace === w ? (
+                      <div className="flex gap-2">
+                        <input
+                          className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 dark:text-white"
+                          value={renameValue}
+                          onChange={e => setRenameValue(e.target.value)}
+                          autoFocus
+                        />
+                        <button 
+                          className="text-xs text-green-600 dark:text-green-400 hover:underline px-2 py-1 rounded bg-green-100 dark:bg-green-900/30" 
+                          onClick={() => { renameWorkspace(w, renameValue); setRenamingWorkspace(null); }}
+                        >
+                          Save
+                        </button>
+                        <button 
+                          className="text-xs text-gray-500 dark:text-gray-400 hover:underline px-2 py-1 rounded bg-gray-100 dark:bg-gray-700" 
+                          onClick={() => setRenamingWorkspace(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className={`font-medium ${w === currentWorkspace ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-gray-100'}`}>
+                          {w} {w === currentWorkspace && <span className="text-xs text-blue-600 dark:text-blue-400">(current)</span>}
+                        </span>
+                        {w !== currentWorkspace && (
+                          <div className="flex gap-1">
+                            <button 
+                              className="text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-2 py-1 rounded transition-colors" 
+                              onClick={() => {
+                                try {
+                                  switchWorkspace(w);
+                                } catch (error) {
+                                  console.error('Error switching workspace:', error);
+                                  setMessage('Error switching workspace. Please try again.');
+                                  setTimeout(() => setMessage(''), 3000);
+                                }
+                              }}
+                            >
+                              Switch
+                            </button>
+                            <button 
+                              className="text-xs text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 px-2 py-1 rounded transition-colors" 
+                              onClick={() => { setRenamingWorkspace(w); setRenameValue(w); }}
+                            >
+                              Rename
+                            </button>
+                            <button 
+                              className="text-xs text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 px-2 py-1 rounded transition-colors flex items-center gap-1" 
+                              onClick={() => {
+                                const newName = window.prompt('Enter a name for the cloned workspace:');
+                                if (newName) cloneWorkspace(w, newName);
+                              }}
+                            >
+                              <Copy className="w-3 h-3" /> Clone
+                            </button>
+                            <button 
+                              className="text-xs text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 px-2 py-1 rounded transition-colors" 
+                              onClick={() => { if (window.confirm('Delete this workspace and all its data?')) deleteWorkspace(w); }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {objectives.reduce((sum, obj) => sum + obj.keyResults.length, 0)}
-                </div>
-                <div className="text-sm text-gray-600">Total Key Results</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Management */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+            <Download className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
+            Data Management
+          </h3>
+          
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Export Data</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                Download all your OKR data as a JSON file for backup or sharing.
+              </p>
+              <button
+                onClick={handleExport}
+                disabled={isLoading}
+                className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export Data</span>
+              </button>
+            </div>
+
+            <div>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Import Data</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                Upload a previously exported JSON file to restore your OKR data.
+              </p>
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 dark:file:bg-blue-900/20 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/30"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Import Data</span>
+                </button>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {objectives.filter(obj => obj.archived).length}
-                </div>
-                <div className="text-sm text-gray-600">Archived</div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+              <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Reset All Data</h4>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                Clear all OKR data and settings. This action cannot be undone.
+              </p>
+              <button
+                onClick={handleReset}
+                disabled={isLoading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Reset All Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Statistics */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Statistics
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{objectives.length}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Total Objectives</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {objectives.reduce((sum, obj) => sum + obj.keyResults.length, 0)}
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-amber-600">
-                  {objectives.filter(obj => obj.progress === 100).length}
-                </div>
-                <div className="text-sm text-gray-600">Completed</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Total Key Results</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {objectives.filter(obj => obj.archived).length}
               </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Archived</div>
+            </div>
+            <div className="text-center p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                {objectives.filter(obj => obj.progress === 100).length}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
             </div>
           </div>
         </div>

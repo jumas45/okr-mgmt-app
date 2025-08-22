@@ -19,9 +19,9 @@ const levelIcons: Record<OKRLevel, { icon: React.ReactNode; color: string }> = {
 
 // Level background color mapping
 const levelBgColors: Record<OKRLevel, string> = {
-  company: 'bg-blue-50',
-  team: 'bg-green-50', 
-  individual: 'bg-purple-50',
+  company: 'bg-blue-50 dark:bg-blue-900/20',
+  team: 'bg-green-50 dark:bg-green-900/20', 
+  individual: 'bg-purple-50 dark:bg-purple-900/20',
 };
 
 function getQuartersBetween(startYear: number, endYear: number, startQuarter?: Quarter, endQuarter?: Quarter) {
@@ -180,12 +180,12 @@ export default function GanttChart() {
       <tr
         key={obj.id}
         className={twMerge(
-          'cursor-pointer hover:bg-blue-100 transition',
-          depth > 0 ? 'bg-gray-50' : ''
+          'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/20 transition',
+          depth > 0 ? 'bg-gray-50 dark:bg-gray-800/50' : ''
         )}
         onClick={() => setDetailObjective({ objective: obj })}
       >
-        <td className="p-2 border-b align-top">
+        <td className="p-2 border-b border-gray-200 dark:border-gray-600 align-top">
           <div className="flex items-center" style={{ marginLeft: depth * 24 }}>
             {hasChildren && (
               <button
@@ -206,7 +206,7 @@ export default function GanttChart() {
             {level.charAt(0).toUpperCase() + level.slice(1)}
           </div>
         </td>
-        <td className="p-2 border-b align-top">
+        <td className="p-2 border-b border-gray-200 dark:border-gray-600 align-top">
           <div className="truncate max-w-xs flex items-center" title={obj.title}>
             {obj.title}
             <span className={`ml-2 text-xs font-bold ${
@@ -216,14 +216,14 @@ export default function GanttChart() {
               'text-red-600'
             }`}>{obj.progress}%</span>
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             Owner: {obj.owner}
             {parentObj && (
               <>
                 {' '}
-                <span className="text-gray-400">|</span>{' '}
+                <span className="text-gray-400 dark:text-gray-500">|</span>{' '}
                 Parent: <button
-                  className="text-blue-600 hover:underline text-xs"
+                  className="text-blue-600 dark:text-blue-400 hover:underline text-xs"
                   onClick={e => {
                     e.stopPropagation();
                     setDetailObjective({ objective: parentObj });
@@ -233,7 +233,7 @@ export default function GanttChart() {
             )}
           </div>
         </td>
-        <td className="p-2 border-b align-top">
+        <td className="p-2 border-b border-gray-200 dark:border-gray-600 align-top">
           <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusColor}`}>
             {statusText}
           </span>
@@ -242,12 +242,12 @@ export default function GanttChart() {
           const inSpan =
             isAfterOrEqual(q.year, q.quarter, obj.startYear, obj.startQuarter) &&
             isBeforeOrEqual(q.year, q.quarter, obj.endYear, obj.endQuarter);
-          const borderClass = idx !== 0 ? ' border-l border-gray-100' : '';
+          const borderClass = idx !== 0 ? ' border-l border-gray-100 dark:border-gray-600' : '';
           if (!inSpan) {
-            return <td key={q.year + q.quarter + obj.id} className={`text-center border-b${borderClass}`}></td>;
+            return <td key={q.year + q.quarter + obj.id} className={`text-center border-b border-gray-200 dark:border-gray-600${borderClass}`}></td>;
           }
           return (
-            <td key={q.year + q.quarter + obj.id} className={`text-center border-b${borderClass}`}>
+            <td key={q.year + q.quarter + obj.id} className={`text-center border-b border-gray-200 dark:border-gray-600${borderClass}`}>
               <BarWithTooltip
                 barColor={barColor}
                 totalKRs={totalKRs}
@@ -298,17 +298,17 @@ export default function GanttChart() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h2 className="text-2xl font-bold mb-6">Timeline</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Timeline</h2>
       <div className="mb-4 flex gap-4 items-center flex-wrap">
-        <span className="font-medium">Grouping:</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">Grouping:</span>
         <button
-          className={`px-3 py-1 rounded ${grouping === 'level' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          className={`px-3 py-1 rounded ${grouping === 'level' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
           onClick={() => setGrouping('level')}
         >
           Level
         </button>
         <button
-          className={`px-3 py-1 rounded ${grouping === 'hierarchy' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          className={`px-3 py-1 rounded ${grouping === 'hierarchy' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
           onClick={() => setGrouping('hierarchy')}
         >
           Parent/Child
@@ -317,7 +317,7 @@ export default function GanttChart() {
           <Search className="w-4 h-4 text-gray-400" />
           <input
             type="text"
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             placeholder="Search objectives..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -326,11 +326,11 @@ export default function GanttChart() {
         
         {/* Quarter/Year Selection */}
         <div className="flex items-center gap-2 ml-4">
-          <span className="font-medium">Period:</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">Period:</span>
           <select
             value={startQuarter}
             onChange={e => setStartQuarter(e.target.value as Quarter)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
             <option value="Q1">Q1</option>
             <option value="Q2">Q2</option>
@@ -341,15 +341,15 @@ export default function GanttChart() {
             type="number"
             value={startYear}
             onChange={e => setStartYear(parseInt(e.target.value))}
-            className="border border-gray-300 rounded px-2 py-1 text-sm w-16"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm w-16 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             min={2020}
             max={2030}
           />
-          <span className="text-gray-500">to</span>
+          <span className="text-gray-500 dark:text-gray-400">to</span>
           <select
             value={endQuarter}
             onChange={e => setEndQuarter(e.target.value as Quarter)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
             <option value="Q1">Q1</option>
             <option value="Q2">Q2</option>
@@ -360,23 +360,23 @@ export default function GanttChart() {
             type="number"
             value={endYear}
             onChange={e => setEndYear(parseInt(e.target.value))}
-            className="border border-gray-300 rounded px-2 py-1 text-sm w-16"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm w-16 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             min={2020}
             max={2030}
           />
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
-        <table className="min-w-full text-sm">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <table className="min-w-full text-sm text-gray-900 dark:text-gray-100">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="p-2 text-left font-semibold border-b">
+            <tr className="bg-gray-50 dark:bg-gray-700">
+              <th className="p-2 text-left font-semibold border-b border-gray-200 dark:border-gray-600">
                 <div className="flex items-center">
                   <span>Level</span>
                   {grouping === 'hierarchy' && (
                     <button
-                      className="ml-2 p-1 rounded hover:bg-gray-200 focus:outline-none"
+                      className="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none"
                       aria-label={
                         Object.values(expandedObjectives).some(v => v === false)
                           ? 'Expand all objectives'
@@ -398,10 +398,10 @@ export default function GanttChart() {
                   )}
                 </div>
               </th>
-              <th className="p-2 text-left font-semibold border-b">Objective</th>
-              <th className="p-2 text-left font-semibold border-b">Status</th>
+              <th className="p-2 text-left font-semibold border-b border-gray-200 dark:border-gray-600">Objective</th>
+              <th className="p-2 text-left font-semibold border-b border-gray-200 dark:border-gray-600">Status</th>
               {quarters.map(q => (
-                <th key={q.year + q.quarter} className="p-2 text-center font-semibold border-b border-l border-gray-100">
+                <th key={q.year + q.quarter} className="p-2 text-center font-semibold border-b border-l border-gray-100 dark:border-gray-600">
                   {q.quarter} {q.year}
                 </th>
               ))}
@@ -417,7 +417,7 @@ export default function GanttChart() {
                 
                 return [
                   <tr key={`level-${level}`} className={levelBgColors[level]}>
-                    <td colSpan={3 + quarters.length} className="p-2">
+                    <td colSpan={3 + quarters.length} className="p-2 text-gray-900 dark:text-gray-100">
                       <div className="flex items-center">
                         <button
                           className="mr-2 focus:outline-none"
@@ -428,7 +428,7 @@ export default function GanttChart() {
                         <span className={`inline-flex items-center justify-center mr-2 ${levelIcons[level].color}`}>
                           {levelIcons[level].icon}
                         </span>
-                        <span className="font-semibold capitalize">{level} Objectives</span>
+                        <span className="font-semibold capitalize text-gray-900 dark:text-gray-100">{level} Objectives</span>
                       </div>
                     </td>
                   </tr>,

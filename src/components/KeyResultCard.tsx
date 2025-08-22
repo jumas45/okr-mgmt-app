@@ -65,7 +65,7 @@ export default function KeyResultCard({ keyResult, objectiveId, onUpdate, onDele
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-sm transition-shadow">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             {isEditing ? (
@@ -92,7 +92,7 @@ export default function KeyResultCard({ keyResult, objectiveId, onUpdate, onDele
               <MoreVertical className="w-4 h-4 text-gray-400" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 top-6 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[100px]">
+              <div className="absolute right-0 top-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-20 min-w-[100px]">
                 <button
                   onClick={() => {
                     setIsEditing(!isEditing);

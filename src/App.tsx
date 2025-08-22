@@ -86,7 +86,18 @@ function App() {
       <main>
         {renderCurrentView()}
       </main>
-      <Toaster position="top-right" toastOptions={{ duration: 3500, style: { borderRadius: '10px', background: '#fff', color: '#333', boxShadow: '0 2px 16px rgba(0,0,0,0.08)' } }} />
+      <Toaster 
+        position="top-right" 
+        toastOptions={{ 
+          duration: 3500, 
+          style: { 
+            borderRadius: '10px', 
+            background: darkMode ? '#374151' : '#fff', 
+            color: darkMode ? '#f9fafb' : '#333', 
+            boxShadow: '0 2px 16px rgba(0,0,0,0.08)' 
+          } 
+        }} 
+      />
       <div aria-live="polite" className="sr-only" id="toast-aria-live"></div>
     </div>
   );

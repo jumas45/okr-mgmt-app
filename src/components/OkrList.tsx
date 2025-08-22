@@ -13,7 +13,7 @@ const levelIcons: Record<string, React.ReactNode> = {
 
 function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+    <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
       <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${value}%`, background: value === 100 ? '#22c55e' : '#3b82f6' }} />
     </div>
   );
@@ -237,7 +237,7 @@ export default function OkrList() {
           onChange={e => setSearch(e.target.value)}
         />
       </div>
-      <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-gray-50">

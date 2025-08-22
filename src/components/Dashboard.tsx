@@ -101,9 +101,9 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
   };
 
   const levelBg: Record<string, string> = {
-    company: 'bg-blue-50',
-    team: 'bg-green-50',
-    individual: 'bg-purple-50',
+    company: 'bg-blue-50 dark:bg-blue-900/20',
+    team: 'bg-green-50 dark:bg-green-900/20',
+    individual: 'bg-purple-50 dark:bg-purple-900/20',
   };
 
   return (
@@ -112,10 +112,10 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               {settings.currentQuarter} {settings.currentYear} OKRs
             </h2>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Track and manage your objectives and key results
             </p>
           </div>
@@ -135,7 +135,7 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
                 </span>
                 <input
                   type="text"
-                  className="border border-gray-300 rounded-lg px-4 py-2 pl-10 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pl-10 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Search objectives..."
                   value={searchTerm}
                   onChange={e => onSearch && onSearch(e.target.value)}
@@ -149,36 +149,36 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
 
         {/* Progress Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition"
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
             onClick={() => {}}
           >
-            <h3 className="text-sm font-medium text-gray-600 mb-2">Overall Progress</h3>
-            <div className="text-3xl font-bold text-gray-900 mb-2">{overallProgress}%</div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Overall Progress</h3>
+            <div className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{overallProgress}%</div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${overallProgress}%` }}
               />
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-green-50 transition"
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 transition"
             onClick={() => {}}
           >
-            <h3 className="text-sm font-medium text-gray-600 mb-2">Total Objectives</h3>
-            <div className="text-3xl font-bold text-gray-900">{objectives.length}</div>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Total Objectives</h3>
+            <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{objectives.length}</div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-purple-50 transition"
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
             onClick={() => {}}
           >
-            <h3 className="text-sm font-medium text-gray-600 mb-2">Key Results</h3>
-            <div className="text-3xl font-bold text-gray-900">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Key Results</h3>
+            <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               {objectives.reduce((sum, obj) => sum + obj.keyResults.length, 0)}
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl border border-gray-200 cursor-pointer hover:bg-amber-50 transition"
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
             onClick={() => {}}
           >
-            <h3 className="text-sm font-medium text-gray-600 mb-2">Completed</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Completed</h3>
             <div className="text-3xl font-bold text-green-600">
               {objectives.filter(obj => obj.progress === 100).length}
             </div>
@@ -195,19 +195,18 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {/* Company Objectives Panel */}
           <section>
             <div
-              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 bg-blue-50"
-              style={{ background: '#e0edfa' }}
+              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20"
               onClick={() => setShowCompany((v: boolean) => !v)}
             >
               <span className={`inline-flex items-center justify-center mr-3 align-middle ${levelIcons['company'].color}`}>
                 {levelIcons['company'].icon}
               </span>
-              <h3 className="text-xl font-semibold text-gray-900 flex-1">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex-1">
                 Company Objectives ({companyObjectives.length})
                 {companyObjectives.length > 0 && (
                   <span className={`ml-2 text-base font-bold ${progressTextColor(companyProgress)} flex items-center gap-2`}>
                     • {companyProgress}%
-                    <span className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <span className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <span className="block h-2 bg-blue-600 rounded-full transition-all duration-300" style={{ width: `${companyProgress}%` }} />
                     </span>
                   </span>
@@ -239,19 +238,18 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {/* Team Objectives Panel */}
           <section>
             <div
-              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 bg-green-50"
-              style={{ background: '#f0fdf4' }}
+              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/20"
               onClick={() => setShowTeam((v: boolean) => !v)}
             >
               <span className={`inline-flex items-center justify-center mr-3 align-middle ${levelIcons['team'].color}`}>
                 {levelIcons['team'].icon}
               </span>
-              <h3 className="text-xl font-semibold text-gray-900 flex-1">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex-1">
                 Team Objectives ({teamObjectives.length})
                 {teamObjectives.length > 0 && (
                   <span className={`ml-2 text-base font-bold ${progressTextColor(teamProgress)} flex items-center gap-2`}>
                     • {teamProgress}%
-                    <span className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <span className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <span className="block h-2 bg-green-600 rounded-full transition-all duration-300" style={{ width: `${teamProgress}%` }} />
                     </span>
                   </span>
@@ -282,19 +280,18 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {/* Individual Objectives Panel */}
           <section>
             <div
-              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 bg-purple-50"
-              style={{ background: '#f3e8fa' }}
+              className="flex items-center cursor-pointer mb-2 rounded-xl px-3 py-2 select-none border border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20"
               onClick={() => setShowIndividual((v: boolean) => !v)}
             >
               <span className={`inline-flex items-center justify-center mr-3 align-middle ${levelIcons['individual'].color}`}>
                 {levelIcons['individual'].icon}
               </span>
-              <h3 className="text-xl font-semibold text-gray-900 flex-1">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex-1">
                 Individual Objectives ({individualObjectives.length})
                 {individualObjectives.length > 0 && (
                   <span className={`ml-2 text-base font-bold ${progressTextColor(individualProgress)} flex items-center gap-2`}>
                     • {individualProgress}%
-                    <span className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <span className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <span className="block h-2 bg-purple-600 rounded-full transition-all duration-300" style={{ width: `${individualProgress}%` }} />
                     </span>
                   </span>
@@ -325,8 +322,8 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
           {filteredObjectives.length === 0 && (
             <div className="text-center py-12">
               <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No objectives found</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No objectives found</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {objectives.length === 0 
                   ? "Get started by creating your first objective for this quarter."
                   : "Try adjusting your search or filters to find what you're looking for."
@@ -345,8 +342,8 @@ export default function Dashboard({ searchTerm, onSearch }: DashboardProps) {
         </div>
         {/* Right Panel: Recent Activity */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h3>
             <div className="space-y-3">
               {objectives
                 .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
