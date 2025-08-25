@@ -41,6 +41,8 @@ The main dashboard showing active objectives with comprehensive test data, progr
 
 ![Dashboard with Test Data](screenshots/dashboard-with-test-data.png)
 
+> **Live Demo**: The dashboard showcases active OKRs with real-time progress tracking and comprehensive metrics.
+
 ### Analytics Dashboard
 Rich analytics interface displaying progress distribution, performance metrics, and insights with real OKR data.
 
